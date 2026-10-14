@@ -1,0 +1,40 @@
+{
+  "branch": "olp",
+  "status": "provisional_development_only",
+  "model_file": "olp/model.keras",
+  "source_checkpoint": "/content/drive/MyDrive/Research/Model_Training/outputs/olp_MobileNetV2/selected_final_model.keras",
+  "checkpoint_name": "selected_final_model.keras",
+  "sha256": "86fa098b0b7ffe85fe7ce3c4f8ebf00f0cfc75c373fb8105535fef4fec791b9e",
+  "bytes": 9631604,
+  "input_shape": [
+    null,
+    224,
+    224,
+    3
+  ],
+  "input_dtype": "float32",
+  "input_range_before_external_preprocess": [
+    0,
+    255
+  ],
+  "color": "RGB",
+  "output_shape": [
+    null,
+    1
+  ],
+  "size": [
+    224,
+    224
+  ],
+  "modality": "intraoral_photo",
+  "classes": [
+    "negative",
+    "positive"
+  ],
+  "output": "sigmoid",
+  "resize": "resize_with_pad",
+  "preprocess": "mobilenet_v2",
+  "provisional_threshold": 0.5,
+  "threshold_validated": false,
+  "test_set_evaluated_by_this_notebook": false
+}

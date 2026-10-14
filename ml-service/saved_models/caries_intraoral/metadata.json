@@ -1,0 +1,40 @@
+{
+  "branch": "caries_intraoral",
+  "status": "provisional_development_only",
+  "model_file": "caries_intraoral/model.keras",
+  "source_checkpoint": "/content/drive/MyDrive/Research/Model_Training/outputs/caries_EfficientNetB0/AlphaDent/best_finetuned.keras",
+  "checkpoint_name": "best_finetuned.keras",
+  "sha256": "22d7697cef74c33fb9719324e82c6043a4d60cb9489421f24447a570e1c7d4c7",
+  "bytes": 28928938,
+  "input_shape": [
+    null,
+    224,
+    224,
+    3
+  ],
+  "input_dtype": "float32",
+  "input_range_before_external_preprocess": [
+    0,
+    255
+  ],
+  "color": "RGB",
+  "output_shape": [
+    null,
+    1
+  ],
+  "size": [
+    224,
+    224
+  ],
+  "modality": "intraoral_photo",
+  "classes": [
+    "no_caries",
+    "caries"
+  ],
+  "output": "sigmoid",
+  "resize": "resize",
+  "preprocess": "none_external_efficientnet_internal",
+  "provisional_threshold": 0.5,
+  "threshold_validated": false,
+  "test_set_evaluated_by_this_notebook": false
+}
