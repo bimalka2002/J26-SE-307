@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { DEFAULT_REQUESTED_MODELS } from "../config/models.js";
 
 // One uploaded image (or x-ray) belonging to an analysis.
 const inputSchema = new mongoose.Schema(
@@ -24,16 +25,17 @@ const inputSchema = new mongoose.Schema(
   { _id: false }
 );
 
-// Shared envelope returned by FastAPI model adapters.
+// Shared envelope returned by FastAPI model adapters (elp, olp, osmf, caries, …).
 const modelResultSchema = new mongoose.Schema(
   {
     modelKey: {
       type: String,
-      required: true, // e.g. "osmf"
+      required: true, // e.g. "elp" for leukoplakia + erythroplakia
     },
+    // Optional when status is "skipped" (no inference run).
     modelVersion: {
       type: String,
-      required: true,
+      default: null,
     },
     status: {
       type: String,
@@ -107,17 +109,22 @@ const analysisSchema = new mongoose.Schema(
       type: [inputSchema],
       default: [],
     },
-    // Pipeline lifecycle. Job payload itself stays in Redis.
+    // Age, gender, smoking, symptoms, etc. Stored now; image models may ignore.
+    clinicalData: {
+      type: mongoose.Schema.Types.Mixed,
+      default: {},
+    },
+    // Pipeline lifecycle. Job payload itself stays in Redis / in-process worker.
     status: {
       type: String,
       enum: ["queued", "running", "completed", "failed", "partial_fail"],
       default: "queued",
       index: true,
     },
-    // Which adapters the worker should call for this run.
+    // Which adapters to call. This branch defaults to ELP only.
     requestedModels: {
       type: [String],
-      default: [],
+      default: () => [...DEFAULT_REQUESTED_MODELS],
     },
     error: {
       code: String,
