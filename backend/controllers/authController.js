@@ -1,10 +1,6 @@
-import express from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import User from "../models/User.js";
-import { requireAuth } from "../middleware/auth.js";
-
-const router = express.Router();
+import userModel from "../models/userModel.js";
 
 const PUBLIC_ROLES = ["general", "clinical"];
 
@@ -28,8 +24,7 @@ function publicUser(user) {
   };
 }
 
-// POST /auth/register
-router.post("/register", async (req, res) => {
+export async function register(req, res) {
   try {
     const { name, email, password, role } = req.body;
 
@@ -41,16 +36,16 @@ router.post("/register", async (req, res) => {
       return res.status(400).json({ message: "Password must be at least 8 characters" });
     }
 
-    // Default on signup.
+    // Admin is not self-assignable on signup.
     const safeRole = PUBLIC_ROLES.includes(role) ? role : "general";
 
-    const existing = await User.findOne({ email: email.toLowerCase().trim() });
+    const existing = await userModel.findOne({ email: email.toLowerCase().trim() });
     if (existing) {
       return res.status(409).json({ message: "Email already registered" });
     }
 
     const passwordHash = await bcrypt.hash(password, 10);
-    const user = await User.create({
+    const user = await userModel.create({
       name,
       email,
       passwordHash,
@@ -63,10 +58,9 @@ router.post("/register", async (req, res) => {
     console.error("register error:", err.message);
     return res.status(500).json({ message: "Registration failed" });
   }
-});
+}
 
-// POST /auth/login
-router.post("/login", async (req, res) => {
+export async function login(req, res) {
   try {
     const { email, password } = req.body;
 
@@ -74,7 +68,7 @@ router.post("/login", async (req, res) => {
       return res.status(400).json({ message: "email and password are required" });
     }
 
-    const user = await User.findOne({ email: email.toLowerCase().trim() }).select(
+    const user = await userModel.findOne({ email: email.toLowerCase().trim() }).select(
       "+passwordHash"
     );
 
@@ -93,11 +87,8 @@ router.post("/login", async (req, res) => {
     console.error("login error:", err.message);
     return res.status(500).json({ message: "Login failed" });
   }
-});
+}
 
-// GET /auth/me — current user from token
-router.get("/me", requireAuth, (req, res) => {
+export function me(req, res) {
   return res.json({ user: publicUser(req.user) });
-});
-
-export default router;
+}
