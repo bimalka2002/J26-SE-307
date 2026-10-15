@@ -89,3 +89,11 @@ Open them in Colab from the GitHub repo, or upload locally.
 - Keep secrets in `backend/.env` only; never commit them.
 - Backend and frontend are separate packages — install and run each in its own folder.
 - This is research software, not a clinical diagnostic device.
+
+## OralScan authentication setup
+
+The existing Next.js frontend now provides `/login`, `/register`, and a minimal protected `/app` landing page. The API exposes `POST /auth/register`, `POST /auth/login`, `POST /auth/google`, and protected `GET /auth/me`. Password and Google sign-in both return the same OralScan bearer JWT session. The browser stores that JWT locally and checks it against `/auth/me` on refresh; sign out removes it. An unauthenticated visit to `/app` returns to `/login` with the intended route preserved.
+
+Copy `backend/.env.example` to `backend/.env`, set a strong random `JWT_SECRET` and your MongoDB URI, then set `GOOGLE_CLIENT_ID` to your Google OAuth **Web application client ID**. Copy `frontend/.env.example` to `frontend/.env.local`; set `NEXT_PUBLIC_API_URL` and `NEXT_PUBLIC_GOOGLE_CLIENT_ID` to the API URL and the **same Web client ID**. These public client ID values are safe to include in browser code; never put a Google client secret in either frontend environment variable. This Google Identity Services ID-token flow does not use a Google client secret. `JWT_SECRET` is separate and signs OralScan's application session.
+
+To configure Google sign-in, create an OAuth 2.0 client with application type **Web application** in Google Cloud Console, then add `http://localhost:3000` under **Authorized JavaScript origins**. Add your deployed site's origin there before deploying. The browser and backend must use the same client ID. Start MongoDB, then run `npm run dev` in `backend` and `npm run dev` in `frontend`. Use `npm test` in `backend` for the isolated authentication API tests.
