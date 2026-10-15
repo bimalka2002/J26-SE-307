@@ -14,8 +14,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "OralScan",
-  description: "Sign in to OralScan",
+  title: "OralScan — AI oral health screening",
+  description:
+    "Capture, analyze, and understand oral health signals with OralScan. Create an account to get started.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
