@@ -17,7 +17,13 @@ const userSchema = new mongoose.Schema(
     // Store a hash only — never plaintext.
     passwordHash: {
       type: String,
-      required: true,
+      required: function () { return !this.googleSub; },
+      select: false,
+    },
+    googleSub: {
+      type: String,
+      unique: true,
+      sparse: true,
       select: false,
     },
     role: {
