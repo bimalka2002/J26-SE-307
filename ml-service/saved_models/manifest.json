@@ -1,0 +1,214 @@
+{
+  "version": "pp1-dev-20261014T190255Z",
+  "status": "provisional_development_only",
+  "created_utc": "2026-10-14T19:02:55.463815+00:00",
+  "tensorflow_version": "2.21.0",
+  "test_set_evaluated_by_this_notebook": false,
+  "branches": {
+    "caries_intraoral": {
+      "branch": "caries_intraoral",
+      "status": "provisional_development_only",
+      "model_file": "caries_intraoral/model.keras",
+      "source_checkpoint": "/content/drive/MyDrive/Research/Model_Training/outputs/caries_EfficientNetB0/AlphaDent/best_finetuned.keras",
+      "checkpoint_name": "best_finetuned.keras",
+      "sha256": "22d7697cef74c33fb9719324e82c6043a4d60cb9489421f24447a570e1c7d4c7",
+      "bytes": 28928938,
+      "input_shape": [
+        null,
+        224,
+        224,
+        3
+      ],
+      "input_dtype": "float32",
+      "input_range_before_external_preprocess": [
+        0,
+        255
+      ],
+      "color": "RGB",
+      "output_shape": [
+        null,
+        1
+      ],
+      "size": [
+        224,
+        224
+      ],
+      "modality": "intraoral_photo",
+      "classes": [
+        "no_caries",
+        "caries"
+      ],
+      "output": "sigmoid",
+      "resize": "resize",
+      "preprocess": "none_external_efficientnet_internal",
+      "provisional_threshold": 0.5,
+      "threshold_validated": false,
+      "test_set_evaluated_by_this_notebook": false
+    },
+    "caries_xray": {
+      "branch": "caries_xray",
+      "status": "provisional_development_only",
+      "model_file": "caries_xray/model.keras",
+      "source_checkpoint": "/content/drive/MyDrive/Research/Model_Training/outputs/caries_EfficientNetB0/DENTEX/best_finetuned.keras",
+      "checkpoint_name": "best_finetuned.keras",
+      "sha256": "9abe2ee1b33fcae65159e2b2cce4abe476a0923ea28b8923563057458bf110af",
+      "bytes": 28928970,
+      "input_shape": [
+        null,
+        224,
+        224,
+        3
+      ],
+      "input_dtype": "float32",
+      "input_range_before_external_preprocess": [
+        0,
+        255
+      ],
+      "color": "RGB",
+      "output_shape": [
+        null,
+        1
+      ],
+      "size": [
+        224,
+        224
+      ],
+      "modality": "dental_xray",
+      "classes": [
+        "no_caries",
+        "caries"
+      ],
+      "output": "sigmoid",
+      "resize": "resize",
+      "preprocess": "none_external_efficientnet_internal",
+      "provisional_threshold": 0.5,
+      "threshold_validated": false,
+      "test_set_evaluated_by_this_notebook": false
+    },
+    "olp": {
+      "branch": "olp",
+      "status": "provisional_development_only",
+      "model_file": "olp/model.keras",
+      "source_checkpoint": "/content/drive/MyDrive/Research/Model_Training/outputs/olp_MobileNetV2/selected_final_model.keras",
+      "checkpoint_name": "selected_final_model.keras",
+      "sha256": "86fa098b0b7ffe85fe7ce3c4f8ebf00f0cfc75c373fb8105535fef4fec791b9e",
+      "bytes": 9631604,
+      "input_shape": [
+        null,
+        224,
+        224,
+        3
+      ],
+      "input_dtype": "float32",
+      "input_range_before_external_preprocess": [
+        0,
+        255
+      ],
+      "color": "RGB",
+      "output_shape": [
+        null,
+        1
+      ],
+      "size": [
+        224,
+        224
+      ],
+      "modality": "intraoral_photo",
+      "classes": [
+        "negative",
+        "positive"
+      ],
+      "output": "sigmoid",
+      "resize": "resize_with_pad",
+      "preprocess": "mobilenet_v2",
+      "provisional_threshold": 0.5,
+      "threshold_validated": false,
+      "test_set_evaluated_by_this_notebook": false
+    },
+    "leukoplakia_erythroplakia": {
+      "branch": "leukoplakia_erythroplakia",
+      "status": "provisional_development_only",
+      "model_file": "leukoplakia_erythroplakia/model.keras",
+      "source_checkpoint": "/content/drive/MyDrive/Research/Model_Training/outputs/leukoplakia_erythroplakia_3class_ResNet50/best_finetuned_model.keras",
+      "checkpoint_name": "best_finetuned_model.keras",
+      "sha256": "567e939d42328ee6ef2cb970dec8f884008e24336eb90e6170762ea3558080b2",
+      "bytes": 210520510,
+      "input_shape": [
+        null,
+        224,
+        224,
+        3
+      ],
+      "input_dtype": "float32",
+      "input_range_before_external_preprocess": [
+        0,
+        255
+      ],
+      "color": "RGB",
+      "output_shape": [
+        null,
+        3
+      ],
+      "size": [
+        224,
+        224
+      ],
+      "modality": "intraoral_photo",
+      "classes": [
+        "neither_target",
+        "leukoplakia",
+        "erythroplakia"
+      ],
+      "output": "softmax",
+      "resize": "resize_with_pad",
+      "preprocess": "resnet50",
+      "provisional_threshold": null,
+      "threshold_validated": false,
+      "test_set_evaluated_by_this_notebook": false
+    },
+    "osmf": {
+      "branch": "osmf",
+      "status": "provisional_development_only",
+      "model_file": "osmf/model.keras",
+      "source_checkpoint": "/content/drive/MyDrive/Research/Model_Training/outputs/osmf_EfficientNetB0/selected_final_model.keras",
+      "checkpoint_name": "selected_final_model.keras",
+      "sha256": "7f61a64c334effcae46a4cc22b09052054d9b92cb097ebb3e6170de4018f19eb",
+      "bytes": 27801233,
+      "input_shape": [
+        null,
+        224,
+        224,
+        3
+      ],
+      "input_dtype": "float32",
+      "input_range_before_external_preprocess": [
+        0,
+        255
+      ],
+      "color": "RGB",
+      "output_shape": [
+        null,
+        1
+      ],
+      "size": [
+        224,
+        224
+      ],
+      "modality": "intraoral_photo",
+      "classes": [
+        "negative",
+        "positive"
+      ],
+      "output": "sigmoid",
+      "resize": "resize_with_pad",
+      "preprocess": "efficientnet_no_op",
+      "provisional_threshold": 0.5,
+      "threshold_validated": false,
+      "test_set_evaluated_by_this_notebook": false
+    }
+  },
+  "missing_branches": [],
+  "not_available_from_upload": [
+    "oral_candidiasis"
+  ]
+}

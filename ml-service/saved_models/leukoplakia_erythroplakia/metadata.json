@@ -1,0 +1,41 @@
+{
+  "branch": "leukoplakia_erythroplakia",
+  "status": "provisional_development_only",
+  "model_file": "leukoplakia_erythroplakia/model.keras",
+  "source_checkpoint": "/content/drive/MyDrive/Research/Model_Training/outputs/leukoplakia_erythroplakia_3class_ResNet50/best_finetuned_model.keras",
+  "checkpoint_name": "best_finetuned_model.keras",
+  "sha256": "567e939d42328ee6ef2cb970dec8f884008e24336eb90e6170762ea3558080b2",
+  "bytes": 210520510,
+  "input_shape": [
+    null,
+    224,
+    224,
+    3
+  ],
+  "input_dtype": "float32",
+  "input_range_before_external_preprocess": [
+    0,
+    255
+  ],
+  "color": "RGB",
+  "output_shape": [
+    null,
+    3
+  ],
+  "size": [
+    224,
+    224
+  ],
+  "modality": "intraoral_photo",
+  "classes": [
+    "neither_target",
+    "leukoplakia",
+    "erythroplakia"
+  ],
+  "output": "softmax",
+  "resize": "resize_with_pad",
+  "preprocess": "resnet50",
+  "provisional_threshold": null,
+  "threshold_validated": false,
+  "test_set_evaluated_by_this_notebook": false
+}

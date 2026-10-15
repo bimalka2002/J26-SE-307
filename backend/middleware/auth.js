@@ -1,5 +1,5 @@
 import jwt from "jsonwebtoken";
-import User from "../models/User.js";
+import userModel from "../models/userModel.js";
 
 // Expects: Authorization: Bearer <token>
 export async function requireAuth(req, res, next) {
@@ -12,7 +12,7 @@ export async function requireAuth(req, res, next) {
     const token = header.slice(7);
     const payload = jwt.verify(token, process.env.JWT_SECRET);
 
-    const user = await User.findById(payload.sub);
+    const user = await userModel.findById(payload.sub);
     if (!user || !user.isActive) {
       return res.status(401).json({ message: "User not found or inactive" });
     }

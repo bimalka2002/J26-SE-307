@@ -1,0 +1,40 @@
+{
+  "branch": "osmf",
+  "status": "provisional_development_only",
+  "model_file": "osmf/model.keras",
+  "source_checkpoint": "/content/drive/MyDrive/Research/Model_Training/outputs/osmf_EfficientNetB0/selected_final_model.keras",
+  "checkpoint_name": "selected_final_model.keras",
+  "sha256": "7f61a64c334effcae46a4cc22b09052054d9b92cb097ebb3e6170de4018f19eb",
+  "bytes": 27801233,
+  "input_shape": [
+    null,
+    224,
+    224,
+    3
+  ],
+  "input_dtype": "float32",
+  "input_range_before_external_preprocess": [
+    0,
+    255
+  ],
+  "color": "RGB",
+  "output_shape": [
+    null,
+    1
+  ],
+  "size": [
+    224,
+    224
+  ],
+  "modality": "intraoral_photo",
+  "classes": [
+    "negative",
+    "positive"
+  ],
+  "output": "sigmoid",
+  "resize": "resize_with_pad",
+  "preprocess": "efficientnet_no_op",
+  "provisional_threshold": 0.5,
+  "threshold_validated": false,
+  "test_set_evaluated_by_this_notebook": false
+}

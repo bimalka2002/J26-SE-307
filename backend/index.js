@@ -2,11 +2,12 @@ import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import { connectDB } from "./config/db.js";
-import authRoutes from "./routes/auth.js";
+import authRoutes from "./routes/authRoutes.js";
+import analysisRoutes from "./routes/analysisRoutes.js";
 
-// Models are imported so schemas register with mongoose on boot.
-import "./models/User.js";
-import "./models/Analysis.js";
+// Register schemas on boot.
+import "./models/userModel.js";
+import "./models/analysisModel.js";
 
 dotenv.config();
 
@@ -17,6 +18,7 @@ app.use(cors());
 app.use(express.json());
 
 app.use("/auth", authRoutes);
+app.use("/analyses", analysisRoutes);
 
 async function start() {
   if (!process.env.JWT_SECRET) {

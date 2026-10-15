@@ -1,0 +1,40 @@
+{
+  "branch": "caries_xray",
+  "status": "provisional_development_only",
+  "model_file": "caries_xray/model.keras",
+  "source_checkpoint": "/content/drive/MyDrive/Research/Model_Training/outputs/caries_EfficientNetB0/DENTEX/best_finetuned.keras",
+  "checkpoint_name": "best_finetuned.keras",
+  "sha256": "9abe2ee1b33fcae65159e2b2cce4abe476a0923ea28b8923563057458bf110af",
+  "bytes": 28928970,
+  "input_shape": [
+    null,
+    224,
+    224,
+    3
+  ],
+  "input_dtype": "float32",
+  "input_range_before_external_preprocess": [
+    0,
+    255
+  ],
+  "color": "RGB",
+  "output_shape": [
+    null,
+    1
+  ],
+  "size": [
+    224,
+    224
+  ],
+  "modality": "dental_xray",
+  "classes": [
+    "no_caries",
+    "caries"
+  ],
+  "output": "sigmoid",
+  "resize": "resize",
+  "preprocess": "none_external_efficientnet_internal",
+  "provisional_threshold": 0.5,
+  "threshold_validated": false,
+  "test_set_evaluated_by_this_notebook": false
+}
