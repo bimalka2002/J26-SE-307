@@ -32,6 +32,16 @@ MODEL_SPECS = {
         "threshold": 0.5,
         "expected_outputs": 1,
     },
+        "osmf": {
+        "filename": "osmf/model.keras",
+        "modality": "oral_photo",
+        "classes": ("negative", "positive"),
+        "output": "sigmoid",
+        "resize": "pad",
+        "preprocess": "none",
+        "threshold": 0.5,
+        "expected_outputs": 1,
+    },
     "elp": {
         "filename": "leukoplakia_erythroplakia/model.keras",
         "modality": "oral_photo",
