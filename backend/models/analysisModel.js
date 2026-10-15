@@ -144,6 +144,6 @@ const analysisSchema = new mongoose.Schema(
 
 analysisSchema.index({ userId: 1, createdAt: -1 });
 
-const Analysis = mongoose.model("Analysis", analysisSchema);
+const analysisModel = mongoose.model("Analysis", analysisSchema);
 
-export default Analysis;
+export default analysisModel;

@@ -1,6 +1,6 @@
 import fs from "fs/promises";
 import path from "path";
-import Analysis from "../models/Analysis.js";
+import analysisModel from "../models/analysisModel.js";
 import { MODEL_ROUTING } from "../config/models.js";
 
 const ML_BASE = (process.env.ML_SERVICE_URL || "http://localhost:8000").replace(/\/$/, "");
@@ -41,7 +41,7 @@ function deriveStatus(results) {
 
 export async function runPipeline(analysisId, inputs, clinicalData, requestedModels) {
   try {
-    await Analysis.findByIdAndUpdate(analysisId, { status: "running", error: undefined });
+    await analysisModel.findByIdAndUpdate(analysisId, { status: "running", error: undefined });
     const inputMap = Object.fromEntries(inputs.map((input) => [input.modality, input]));
     const results = [];
 
@@ -77,7 +77,7 @@ export async function runPipeline(analysisId, inputs, clinicalData, requestedMod
     }
 
     const status = deriveStatus(results);
-    await Analysis.findByIdAndUpdate(analysisId, {
+    await analysisModel.findByIdAndUpdate(analysisId, {
       status, modelResults: results,
       error: status === "failed"
         ? { code: "PIPELINE_FAILED", message: "No model completed" }
@@ -86,7 +86,7 @@ export async function runPipeline(analysisId, inputs, clinicalData, requestedMod
   } catch (err) {
     console.error("pipeline fatal error:", err);
     try {
-      await Analysis.findByIdAndUpdate(analysisId, {
+      await analysisModel.findByIdAndUpdate(analysisId, {
         status: "failed", error: { code: "PIPELINE_ERROR", message: err.message },
       });
     } catch (saveError) {
