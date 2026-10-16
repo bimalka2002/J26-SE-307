@@ -1,21 +1,69 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { motion } from "motion/react";
+import { useEffect, useState } from "react";
+import { AnimatedButton } from "@/components/ui/AnimatedButton";
 import { Button } from "@/components/ui/Button";
 
 const links = [
-  { href: "#home", label: "Home" },
-  { href: "#services", label: "Our Services" },
-  { href: "#membership", label: "Membership" },
-  { href: "#contact", label: "Contact" },
+  { href: "#home", id: "home", label: "Home" },
+  { href: "#how-it-works", id: "how-it-works", label: "How it works" },
+  { href: "#features", id: "features", label: "Features" },
 ];
 
 export function Navbar() {
   const [open, setOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const [active, setActive] = useState("home");
+
+  useEffect(() => {
+    const onScroll = () => {
+      setScrolled(window.scrollY > 48);
+    };
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  useEffect(() => {
+    const sections = links
+      .map((link) => document.getElementById(link.id))
+      .filter((el): el is HTMLElement => Boolean(el));
+
+    if (!sections.length) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visible = entries
+          .filter((entry) => entry.isIntersecting)
+          .sort((a, b) => b.intersectionRatio - a.intersectionRatio);
+        if (visible[0]?.target?.id) {
+          setActive(visible[0].target.id);
+        }
+      },
+      {
+        rootMargin: "-30% 0px -55% 0px",
+        threshold: [0.1, 0.35, 0.6],
+      },
+    );
+
+    sections.forEach((section) => observer.observe(section));
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (!scrolled) return;
+    setOpen(false);
+  }, [scrolled]);
 
   return (
-    <header className="dv-nav">
+    <motion.header
+      className={`dv-nav${scrolled ? " is-scrolled" : ""}`}
+      initial={false}
+      animate={{ y: 0 }}
+      transition={{ type: "spring", stiffness: 320, damping: 28 }}
+    >
       <div className="dv-nav-inner">
         <Link href="#home" className="dv-logo" onClick={() => setOpen(false)}>
           <span className="dv-logo-mark" aria-hidden>
@@ -29,23 +77,34 @@ export function Navbar() {
 
         <nav className="dv-nav-links" aria-label="Primary">
           {links.map((link) => (
-            <a key={link.href} href={link.href}>
+            <a
+              key={link.href}
+              href={link.href}
+              className={active === link.id ? "is-active" : undefined}
+              onClick={() => setOpen(false)}
+            >
               {link.label}
             </a>
           ))}
         </nav>
 
         <div className="dv-nav-actions">
-          <button type="button" className="dv-lang" aria-label="Language">
-            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
-              <circle cx="12" cy="12" r="9" />
-              <path d="M3 12h18M12 3c2.5 2.8 2.5 15.2 0 18M12 3c-2.5 2.8-2.5 15.2 0 18" />
-            </svg>
-            EN
-          </button>
-          <Button href="/login" className="dv-nav-signin">
+          {!scrolled ? (
+            <button type="button" className="dv-lang" aria-label="Language">
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
+                <circle cx="12" cy="12" r="9" />
+                <path d="M3 12h18M12 3c2.5 2.8 2.5 15.2 0 18M12 3c-2.5 2.8-2.5 15.2 0 18" />
+              </svg>
+              EN
+            </button>
+          ) : (
+            <Link href="/register" className="dv-nav-secondary">
+              Get Started
+            </Link>
+          )}
+          <AnimatedButton href="/login" className="dv-nav-signin" arrow={scrolled}>
             Sign In
-          </Button>
+          </AnimatedButton>
         </div>
 
         <button
@@ -63,7 +122,12 @@ export function Navbar() {
       {open ? (
         <div id="dv-mobile-nav" className="dv-mobile-nav">
           {links.map((link) => (
-            <a key={link.href} href={link.href} onClick={() => setOpen(false)}>
+            <a
+              key={link.href}
+              href={link.href}
+              className={active === link.id ? "is-active" : undefined}
+              onClick={() => setOpen(false)}
+            >
               {link.label}
             </a>
           ))}
@@ -75,6 +139,6 @@ export function Navbar() {
           </Button>
         </div>
       ) : null}
-    </header>
+    </motion.header>
   );
 }

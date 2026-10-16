@@ -1,6 +1,6 @@
 "use client";
 
-import { useReducedMotion } from "motion/react";
+import { motion, useReducedMotion } from "motion/react";
 import { useEffect, useRef } from "react";
 
 export function HeroBackground() {
@@ -18,22 +18,29 @@ export function HeroBackground() {
     }
 
     void video.play().catch(() => {
-      /* autoplay can be blocked; poster/fallback still shows */
+      /* autoplay can be blocked; overlay still covers the area */
     });
   }, [reduceMotion]);
 
   return (
     <div className="dv-hero-bg" aria-hidden>
-      <video
-        ref={videoRef}
-        className="dv-hero-video"
-        src="/videos/hero.mp4"
-        muted
-        loop
-        playsInline
-        autoPlay={!reduceMotion}
-        preload="metadata"
-      />
+      <motion.div
+        className="dv-hero-video-frame"
+        initial={reduceMotion ? false : { opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 1.1, ease: [0.22, 1, 0.36, 1] }}
+      >
+        <video
+          ref={videoRef}
+          className="dv-hero-video"
+          src="/videos/hero.mp4"
+          muted
+          loop
+          playsInline
+          autoPlay={!reduceMotion}
+          preload="auto"
+        />
+      </motion.div>
       <div className="dv-hero-video-overlay" />
     </div>
   );
