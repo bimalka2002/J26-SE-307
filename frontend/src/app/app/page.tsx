@@ -1,19 +1,38 @@
 "use client";
 
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { motion, useReducedMotion } from "motion/react";
+import { AuthGate } from "@/components/app/AuthGate";
+import { ScreeningForm } from "@/components/app/ScreeningForm";
 import { useAuth } from "@/components/auth/AuthProvider";
 
 export default function AppPage() {
   const auth = useAuth();
-  const router = useRouter();
-  useEffect(() => {
-    if (auth.status === "anonymous") {
-      const next = window.location.pathname + window.location.search + window.location.hash;
-      router.replace(`/login?next=${encodeURIComponent(next)}`);
-    }
-  }, [auth.status, router]);
-  if (auth.status === "error") return <main className="auth-status"><p role="alert">{auth.error}</p><button className="primary-button" onClick={auth.retry}>Try again</button><button className="text-button" onClick={auth.logout}>Sign out</button></main>;
-  if (auth.status !== "authenticated" || !auth.user) return <p className="auth-status" role="status">Checking your session…</p>;
-  return <main className="signed-in"><p className="brand">OralScan</p><h1>You’re signed in, {auth.user.name}.</h1><button className="primary-button" onClick={() => { auth.logout(); router.replace("/login"); }}>Log out</button></main>;
+  const reduceMotion = useReducedMotion();
+  const firstName =
+    auth.user?.name.trim().split(/\s+/)[0] || auth.user?.name || "there";
+
+  return (
+    <AuthGate>
+      <main className="app-main app-main-home">
+        <motion.div
+          className="app-home"
+          initial={reduceMotion ? false : { opacity: 0, y: 18 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+        >
+          <header className="app-home-intro">
+            <p className="app-eyebrow">Workspace</p>
+            <h1>
+              Welcome back, <span className="app-welcome-name">{firstName}</span>
+            </h1>
+            <p>
+              Upload an oral photo and optional X-ray to start screening. You’ll see a progress
+              screen, then results on a separate page.
+            </p>
+          </header>
+          <ScreeningForm />
+        </motion.div>
+      </main>
+    </AuthGate>
+  );
 }

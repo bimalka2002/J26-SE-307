@@ -25,8 +25,14 @@ export async function authRequest<T>(path: string, body?: object, token?: string
   return data as T;
 }
 
-// Only the implemented authenticated landing route is an allowed return target.
+// Only authenticated OralScan app routes are allowed return targets.
 export function returnPath(value: string | null): string {
-  if (!value || !/^\/app(?:[?#]|$)/.test(value) || /[\\\r\n]/.test(value)) return "/app";
+  if (
+    !value ||
+    /[\\\r\n]/.test(value) ||
+    !/^\/app(?:\/[A-Za-z0-9._-]+)*(?:[?#]|$)/.test(value)
+  ) {
+    return "/app";
+  }
   return value;
 }
