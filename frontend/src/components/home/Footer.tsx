@@ -1,0 +1,75 @@
+import Link from "next/link";
+
+const columns = [
+  {
+    title: "Product",
+    links: [
+      { href: "#home", label: "Home" },
+      { href: "#how-it-works", label: "How it works" },
+      { href: "#features", label: "Features" },
+    ],
+  },
+  {
+    title: "Account",
+    links: [
+      { href: "/login", label: "Sign in" },
+      { href: "/register", label: "Create account" },
+    ],
+  },
+  {
+    title: "Research",
+    links: [
+      { href: "#help", label: "About OralScan" },
+      { href: "#features", label: "AI models" },
+      { href: "#how-it-works", label: "How screening works" },
+    ],
+  },
+];
+
+export function Footer() {
+  return (
+    <footer id="help" className="dv-footer">
+      <div className="dv-footer-top">
+        <div className="dv-footer-cta">
+          <h2 className="dv-footer-headline">
+            Screening starts with a photo.{" "}
+            <span className="dv-footer-accent">Try it.</span>
+          </h2>
+          <div className="dv-footer-actions">
+            <Link href="/register" className="dv-footer-store">
+              <span className="dv-footer-store-kicker">Get started</span>
+              <span className="dv-footer-store-label">Create account</span>
+            </Link>
+            <Link href="/login" className="dv-footer-store">
+              <span className="dv-footer-store-kicker">Already have one?</span>
+              <span className="dv-footer-store-label">Sign in</span>
+            </Link>
+          </div>
+        </div>
+
+        <div className="dv-footer-cols">
+          {columns.map((column) => (
+            <div key={column.title} className="dv-footer-col">
+              <h3>{column.title}</h3>
+              <ul>
+                {column.links.map((link) => (
+                  <li key={link.label}>
+                    <Link href={link.href}>{link.label}</Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="dv-footer-bottom">
+        <p>© {new Date().getFullYear()} OralScan, SLIIT research project</p>
+      </div>
+
+      <p className="dv-footer-watermark" aria-hidden>
+        OralScan
+      </p>
+    </footer>
+  );
+}
