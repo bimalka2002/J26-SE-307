@@ -9,11 +9,17 @@ const inputSchema = new mongoose.Schema(
       enum: ["oral_photo", "xray"],
       required: true,
     },
-    // Object key / path in private storage — not a public URL.
+    storageProvider: {
+      type: String,
+      enum: ["local", "cloudinary"],
+      default: "local",
+    },
+    // Cloudinary public ID (authenticated asset), or a legacy local path.
     storageKey: {
       type: String,
       required: true,
     },
+    format: String,
     originalFilename: String,
     mimeType: String,
     sizeBytes: Number,

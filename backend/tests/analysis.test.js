@@ -1,5 +1,8 @@
 import { after, before, beforeEach, test } from "node:test";
 import assert from "node:assert/strict";
+import { access } from "node:fs/promises";
+import { v2 as cloudinary } from "cloudinary";
+import { installMockCloudinary } from "./helpers/cloudinary.js";
 import express from "express";
 import request from "supertest";
 import authRoutes from "../routes/authRoutes.js";
@@ -33,6 +36,7 @@ let stop;
 let restoreFetch;
 let token;
 let userId;
+let storage;
 
 before(async () => {
   stop = await startMongo();
@@ -42,13 +46,16 @@ before(async () => {
 });
 
 after(async () => {
+  storage?.restore();
   if (restoreFetch) restoreFetch();
   if (stop) await stop();
 });
 
 beforeEach(async () => {
+  storage?.restore();
   if (restoreFetch) restoreFetch();
   restoreFetch = installMockMl();
+  storage = installMockCloudinary();
   await User.deleteMany({});
   await analysisModel.deleteMany({});
 
@@ -131,6 +138,11 @@ test("oral_photo only: queues analysis, runs photo models, skips xray model", as
   assert.equal(analysis.inputs.length, 1);
   assert.equal(analysis.inputs[0].modality, "oral_photo");
   assert.equal(analysis.inputs[0].mimeType, "image/png");
+  assert.equal(analysis.inputs[0].storageProvider, "cloudinary");
+  assert.equal(analysis.inputs[0].storageKey, storage.uploads[0].publicId);
+  assert.equal(analysis.inputs[0].format, "png");
+  assert.ok(storage.downloads.length > 0);
+  await assert.rejects(access(storage.uploads[0].path), { code: "ENOENT" });
 
   for (const [modelKey, modality] of Object.entries(MODEL_ROUTING)) {
     if (modality === "oral_photo") {
@@ -203,4 +215,44 @@ test("create accepts omitted clinicalData and still completes", async () => {
   const analysis = await waitForTerminal(() => fetchAnalysis(created.body.analysisId));
   assert.equal(analysis.status, "completed");
   assert.ok(analysis.modelResults.some((r) => r.status === "completed"));
+});
+
+test("missing Cloudinary credentials returns 503 without creating an analysis", async () => {
+  delete process.env.CLOUDINARY_API_SECRET;
+  await createAnalysis({ oral: "oral.png" }).expect(503);
+  assert.equal(await analysisModel.countDocuments(), 0);
+  assert.equal(storage.uploads.length, 0);
+});
+
+test("a second upload failure rolls back the first asset", async (t) => {
+  const upload = cloudinary.uploader.upload;
+  let calls = 0;
+  t.mock.method(cloudinary.uploader, "upload", async (...args) => {
+    if (++calls === 2) throw new Error("Cloudinary unavailable");
+    return upload(...args);
+  });
+  await createAnalysis({ oral: "oral.png", xray: "xray.jpg" }).expect(500);
+  assert.equal(await analysisModel.countDocuments(), 0);
+  assert.equal(storage.assets.size, 0);
+  assert.deepEqual(storage.destroyed, [storage.uploads[0].publicId]);
+});
+
+test("database failure rolls back all uploaded assets", async (t) => {
+  t.mock.method(analysisModel, "create", async () => { throw new Error("Database unavailable"); });
+  await createAnalysis({ oral: "oral.png", xray: "xray.jpg" }).expect(500);
+  assert.equal(storage.assets.size, 0);
+  assert.equal(storage.destroyed.length, 2);
+  for (const upload of storage.uploads) {
+    await assert.rejects(access(upload.path), { code: "ENOENT" });
+  }
+});
+
+test("rejects oversized and unexpected files before Cloudinary upload", async () => {
+  await auth(request(app).post("/analyses"))
+    .attach("oral_photo", Buffer.alloc(10 * 1024 * 1024 + 1), {
+      filename: "large.png", contentType: "image/png",
+    }).expect(400);
+  await auth(request(app).post("/analyses"))
+    .attach("other", fixturePath("oral.png")).expect(400);
+  assert.equal(storage.uploads.length, 0);
 });

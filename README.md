@@ -63,7 +63,17 @@ Server defaults to `http://localhost:5000`.
 
 User roles: `general`, `clinical`, `admin`.
 
-The `Analysis` model is prepared for queued multi-model runs (oral photo / X-ray inputs, per-model scores, optional LLM report). Analysis routes are not wired yet.
+### Screening image uploads (Cloudinary)
+
+Set `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, and `CLOUDINARY_API_SECRET` in `backend/.env` using your Cloudinary product environment credentials. See `backend/.env.example` for all settings. Optionally set `CLOUDINARY_FOLDER` (defaults to `oralscan/analyses`). Restart the backend after changing these values. Keep the API secret on the backend only.
+
+The existing screening form uploads through authenticated `POST /analyses` using multipart fields `oral_photo` and/or `xray`, plus optional `clinicalData` JSON. JPEG and PNG images up to 10 MB each are accepted, with at most one image per field. No frontend configuration or unsigned upload preset is required.
+
+The backend stores images as Cloudinary **authenticated** assets and saves their public IDs, format, and file metadata in MongoDB. Temporary local uploads are removed after processing. If another upload or database creation fails, the backend attempts to delete assets already uploaded for that request and logs any cleanup failures. Missing Cloudinary credentials return HTTP 503; other upload failures return HTTP 500.
+
+The ML worker retrieves images using five-minute signed download URLs and forwards their bytes to the existing FastAPI service. Older analyses with local file paths remain readable; existing images are not migrated automatically. `GET /analyses/:id` remains restricted to the owner or an admin. See [Cloudinary's authenticated asset documentation](https://cloudinary.com/documentation/control_access_to_media) for the storage access behavior.
+
+Run `npm test` in `backend` for the API, pipeline, and image-storage tests. Tests mock Cloudinary and the ML service, and use a disposable MongoDB instance; no real Cloudinary credentials are required.
 
 ## Frontend setup
 

@@ -2,6 +2,7 @@ import analysisModel from "../models/analysisModel.js";
 import { DEFAULT_REQUESTED_MODELS } from "../config/models.js";
 import { runPipeline } from "../workers/pipeline.js";
 import { removeSubmittedFiles } from "../middleware/upload.js";
+import { uploadImage, removeImage } from "../services/imageStorage.js";
 
 function parseClinicalData(raw) {
   if (raw == null || raw === "") return {};
@@ -14,32 +15,29 @@ function parseClinicalData(raw) {
 }
 
 export async function createAnalysis(req, res) {
+  const inputs = [];
+  let persisted = false;
   try {
     const oralPhoto = req.files?.oral_photo?.[0];
     const xray = req.files?.xray?.[0];
     if (!oralPhoto && !xray) {
-      removeSubmittedFiles(req);
       return res.status(400).json({ message: "oral_photo or xray is required" });
     }
 
     const clinicalData = parseClinicalData(req.body.clinicalData);
     if (clinicalData === null) {
-      removeSubmittedFiles(req);
       return res.status(400).json({ message: "clinicalData must be a JSON object" });
     }
 
-    const inputs = [
+    const submissions = [
       oralPhoto && { modality: "oral_photo", file: oralPhoto },
       xray && { modality: "xray", file: xray },
-    ]
-      .filter(Boolean)
-      .map(({ modality, file }) => ({
-        modality,
-        storageKey: file.path,
-        originalFilename: file.originalname,
-        mimeType: file.mimetype,
-        sizeBytes: file.size,
-      }));
+    ].filter(Boolean);
+    // Track each success so a later upload or database failure can be rolled back.
+    for (const { modality, file } of submissions) {
+      inputs.push({ modality, ...await uploadImage(file) });
+    }
+    await removeSubmittedFiles(req);
 
     // ELP-only by default; teammates extend requestedModels later.
     const analysis = await analysisModel.create({
@@ -49,6 +47,7 @@ export async function createAnalysis(req, res) {
       requestedModels: [...DEFAULT_REQUESTED_MODELS],
       status: "queued",
     });
+    persisted = true;
 
     // In-process worker for now; swap for a durable queue later.
     void runPipeline(
@@ -64,9 +63,21 @@ export async function createAnalysis(req, res) {
       requestedModels: analysis.requestedModels,
     });
   } catch (err) {
-    removeSubmittedFiles(req);
-    console.error("create analysis error:", err);
+    if (!persisted) {
+      const cleanup = await Promise.allSettled(inputs.map(removeImage));
+      cleanup.forEach((result, index) => {
+        if (result.status === "rejected") {
+          console.error("Cloudinary rollback failed for:", inputs[index].storageKey);
+        }
+      });
+    }
+    console.error("create analysis error:", err.message);
+    if (err.code === "IMAGE_STORAGE_UNAVAILABLE") {
+      return res.status(503).json({ message: "Image storage is not configured" });
+    }
     return res.status(500).json({ message: "Failed to create analysis" });
+  } finally {
+    await removeSubmittedFiles(req);
   }
 }
 
