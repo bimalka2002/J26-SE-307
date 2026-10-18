@@ -1,12 +1,12 @@
-import fs from "fs/promises";
 import path from "path";
+import { readImage } from "../services/imageStorage.js";
 import analysisModel from "../models/analysisModel.js";
 import { MODEL_ROUTING } from "../config/models.js";
 
 const ML_BASE = (process.env.ML_SERVICE_URL || "http://localhost:8000").replace(/\/$/, "");
 
 async function callModel(modelKey, input, clinicalData) {
-  const fileBytes = await fs.readFile(input.storageKey);
+  const fileBytes = await readImage(input);
   const form = new FormData();
   form.append(
     "image",

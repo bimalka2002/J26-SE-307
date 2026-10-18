@@ -30,15 +30,19 @@ export function submittedFiles(req) {
   return Object.values(req.files || {}).flat();
 }
 
-export function removeSubmittedFiles(req) {
-  for (const file of submittedFiles(req)) {
-    fs.promises.unlink(file.path).catch(() => {});
-  }
+export async function removeSubmittedFiles(req) {
+  await Promise.all(submittedFiles(req).map(async (file) => {
+    try {
+      await fs.promises.unlink(file.path);
+    } catch (error) {
+      if (error.code !== "ENOENT") console.error("Temporary upload cleanup failed:", error.message);
+    }
+  }));
 }
 
-export function handleUploadError(err, req, res, next) {
+export async function handleUploadError(err, req, res, next) {
   if (err instanceof multer.MulterError || err.message === "Only JPEG and PNG images are allowed") {
-    removeSubmittedFiles(req);
+    await removeSubmittedFiles(req);
     return res.status(400).json({ message: err.message });
   }
   return next(err);
