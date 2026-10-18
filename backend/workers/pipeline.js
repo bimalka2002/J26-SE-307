@@ -30,7 +30,7 @@ async function callModel(modelKey, input, clinicalData) {
   return body;
 }
 
-function deriveStatus(results) {
+export function deriveStatus(results) {
   const completed = results.filter((r) => r.status === "completed").length;
   const failed = results.filter((r) => r.status === "failed").length;
   if (failed && completed) return "partial_fail";
