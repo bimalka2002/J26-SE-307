@@ -23,7 +23,9 @@
     "google-auth-library": "^11.3.0",
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.11.2",
-    "multer": "^2.4.0"
+    "multer": "^2.4.0",
+    "swagger-jsdoc": "^6.3.0",
+    "swagger-ui-express": "^5.0.1"
   },
   "devDependencies": {
     "mongodb-memory-server": "^11.3.0",

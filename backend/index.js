@@ -1,7 +1,9 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
+import swaggerUi from "swagger-ui-express";
 import { connectDB } from "./config/db.js";
+import { swaggerSpec } from "./config/swagger.js";
 import authRoutes from "./routes/authRoutes.js";
 import analysisRoutes from "./routes/analysisRoutes.js";
 
@@ -17,6 +19,7 @@ const PORT = process.env.PORT || 5000;
 app.use(cors({ origin: process.env.FRONTEND_ORIGIN || "http://localhost:3000" }));
 app.use(express.json());
 
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 app.use("/auth", authRoutes);
 app.use("/analyses", analysisRoutes);
 
@@ -29,6 +32,7 @@ async function start() {
 
   app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
+    console.log(`Swagger UI: http://localhost:${PORT}/api-docs`);
   });
 }
 
