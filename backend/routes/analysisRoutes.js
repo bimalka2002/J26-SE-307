@@ -1,7 +1,7 @@
 import express from "express";
 import { requireAuth } from "../middleware/auth.js";
 import { upload, handleUploadError } from "../middleware/upload.js";
-import { createAnalysis, getAnalysis } from "../controllers/analysisController.js";
+import { createAnalysis, getAnalysis, getAnalysisImage } from "../controllers/analysisController.js";
 
 const router = express.Router();
 
@@ -16,6 +16,7 @@ router.post(
 );
 
 router.get("/:id", requireAuth, getAnalysis);
+router.get("/:id/images/:modality", requireAuth, getAnalysisImage);
 
 router.use(handleUploadError);
 

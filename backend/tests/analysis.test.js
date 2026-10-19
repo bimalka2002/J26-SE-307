@@ -256,3 +256,26 @@ test("rejects oversized and unexpected files before Cloudinary upload", async ()
     .attach("other", fixturePath("oral.png")).expect(400);
   assert.equal(storage.uploads.length, 0);
 });
+
+test("streams an uploaded image back to its owner only", async () => {
+  const created = await createAnalysis({ oral: "oral.png" }).expect(202);
+  const id = created.body.analysisId;
+  await waitForTerminal(() => fetchAnalysis(id));
+
+  const image = await auth(request(app).get(`/analyses/${id}/images/oral_photo`)).expect(200);
+  assert.equal(image.headers["content-type"], "image/png");
+  assert.ok(image.body.length > 0);
+
+  await auth(request(app).get(`/analyses/${id}/images/xray`)).expect(404);
+  await auth(request(app).get(`/analyses/${id}/images/other`)).expect(404);
+  await request(app).get(`/analyses/${id}/images/oral_photo`).expect(401);
+
+  const other = await request(app)
+    .post("/auth/register")
+    .send({ name: "Other User", email: "other@example.com", password: "valid-password-42" })
+    .expect(201);
+  await request(app)
+    .get(`/analyses/${id}/images/oral_photo`)
+    .set("Authorization", `Bearer ${other.body.token}`)
+    .expect(403);
+});
