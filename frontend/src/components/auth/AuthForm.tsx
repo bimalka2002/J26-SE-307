@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useAuth } from "./AuthProvider";
 import { PASSWORD_MAX_BYTES, PASSWORD_MIN, PasswordField, TextField, passwordBytes } from "./AuthFields";
+import { AuthShowcase } from "./AuthShowcase";
 import { GoogleButton } from "./GoogleButton";
 import { SessionStatus } from "./SessionStatus";
 import { returnPath } from "@/lib/auth";
@@ -148,6 +149,7 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
               : "Sign in to continue screening oral images and reviewing condition findings."}
           </p>
         </div>
+        <AuthShowcase />
         <p className="intro-footer">
           <Link href="/">← Back to home</Link>
         </p>
