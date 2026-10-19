@@ -137,11 +137,6 @@ class HomeScreen extends StatelessWidget {
                           },
                         ),
                       ),
-                      const SizedBox(height: 22),
-                      const Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 18),
-                        child: _FooterNote(),
-                      ),
                       SizedBox(height: 96 + MediaQuery.paddingOf(context).bottom),
                     ],
                   ),
@@ -419,12 +414,14 @@ const _features = [
     title: 'Structured findings',
     text: 'Review clear per-condition outputs in your account.',
     icon: Icons.description_outlined,
+    imageAsset: 'assets/features/report.png',
   ),
   _FeatureData(
     chip: 'Protect',
     title: 'Secure account access',
     text: 'Keep uploads and analysis history private.',
     icon: Icons.lock_outline_rounded,
+    imageAsset: 'assets/features/protect.png',
   ),
 ];
 
@@ -534,20 +531,3 @@ class _FeatureTile extends StatelessWidget {
   }
 }
 
-class _FooterNote extends StatelessWidget {
-  const _FooterNote();
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      'Screening support only · Does not replace clinical diagnosis.',
-      textAlign: TextAlign.center,
-      style: TextStyle(
-        color: AppColors.muted.withValues(alpha: 0.75),
-        fontSize: 11,
-        height: 1.4,
-        fontWeight: FontWeight.w500,
-      ),
-    );
-  }
-}

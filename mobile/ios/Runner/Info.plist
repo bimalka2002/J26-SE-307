@@ -4,6 +4,12 @@
 <dict>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>OralScan needs camera access to capture oral photos and dental X-rays for screening.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>OralScan needs photo library access so you can choose oral photos and X-rays for screening.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>OralScan may save captured screening images to your photo library when you choose to.</string>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
 import 'home_screen.dart';
 import 'login_screen.dart';
+import 'scan_screen.dart';
 
 class MainShell extends StatefulWidget {
   const MainShell({super.key, this.userName, this.initialIndex = 0});
@@ -40,20 +41,7 @@ class _MainShellState extends State<MainShell> {
         onStartScreening: () => _openTab(1),
         onViewHistory: () => _openTab(2),
       ),
-      _PlaceholderTab(
-        title: 'New screening',
-        subtitle: 'Upload an oral photo or dental X-ray to begin AI screening.',
-        icon: Icons.document_scanner_outlined,
-        actionLabel: 'Choose image',
-        onAction: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Upload flow comes next.'),
-              behavior: SnackBarBehavior.floating,
-            ),
-          );
-        },
-      ),
+      const ScanScreen(),
       const _PlaceholderTab(
         title: 'History',
         subtitle: 'Your past screenings will appear here.',
