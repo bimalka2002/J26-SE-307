@@ -4,7 +4,10 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useAuth } from "./AuthProvider";
+import { PASSWORD_MAX_BYTES, PASSWORD_MIN, PasswordField, TextField, passwordBytes } from "./AuthFields";
+import { AuthShowcase } from "./AuthShowcase";
 import { GoogleButton } from "./GoogleButton";
+import { SessionStatus } from "./SessionStatus";
 import { returnPath } from "@/lib/auth";
 
 function BrandMark() {
@@ -18,6 +21,39 @@ function BrandMark() {
   );
 }
 
+type FieldName = "name" | "email" | "password" | "confirmPassword";
+type Values = Record<FieldName, string>;
+
+const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const TOO_LONG = `That password is too long. Use ${PASSWORD_MAX_BYTES} characters or fewer (accented and non-English letters can count as more than one).`;
+
+function validate(values: Values, register: boolean): Partial<Record<FieldName, string>> {
+  const errors: Partial<Record<FieldName, string>> = {};
+  const name = values.name.trim();
+  const email = values.email.trim();
+
+  if (register) {
+    if (!name) errors.name = "Enter your full name.";
+    else if (name.length > 100) errors.name = "Your name must be 100 characters or fewer.";
+  }
+
+  if (!email) errors.email = "Enter your email address.";
+  else if (email.length > 254 || !EMAIL.test(email)) errors.email = "Enter a valid email address, like you@example.com.";
+
+  if (!values.password) errors.password = register ? "Create a password." : "Enter your password.";
+  else if (register && values.password.length < PASSWORD_MIN) errors.password = `Use at least ${PASSWORD_MIN} characters.`;
+  else if (passwordBytes(values.password) > PASSWORD_MAX_BYTES) errors.password = TOO_LONG;
+
+  if (register) {
+    if (!values.confirmPassword) errors.confirmPassword = "Re-enter your password to confirm it.";
+    else if (values.confirmPassword !== values.password) errors.confirmPassword = "The passwords don't match.";
+  }
+
+  return errors;
+}
+
+const FIELD_ORDER: FieldName[] = ["name", "email", "password", "confirmPassword"];
+
 export function AuthForm({ mode }: { mode: "login" | "register" }) {
   const register = mode === "register";
   const auth = useAuth();
@@ -28,6 +64,18 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
   const pending = useRef(false);
   const [error, setError] = useState("");
   const errorRef = useRef<HTMLDivElement>(null);
+  const [values, setValues] = useState<Values>({ name: "", email: "", password: "", confirmPassword: "" });
+  const [touched, setTouched] = useState<Partial<Record<FieldName, boolean>>>({});
+  const [submitted, setSubmitted] = useState(false);
+  const errors = validate(values, register);
+  const shown = (field: FieldName) => (touched[field] || submitted ? errors[field] : undefined);
+
+  function update(field: FieldName, value: string) {
+    setValues((current) => ({ ...current, [field]: value }));
+    setError("");
+  }
+
+  const blur = (field: FieldName) => () => setTouched((current) => ({ ...current, [field]: true }));
   useEffect(() => {
     if (auth.status === "authenticated") router.replace(next);
   }, [auth.status, next, router]);
@@ -52,31 +100,19 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const data = new FormData(event.currentTarget);
-    const email = String(data.get("email") || "").trim();
-    const password = String(data.get("password") || "");
-    const name = String(data.get("name") || "").trim();
-    if (register && !name) {
-      setError("Please enter your name.");
+    setSubmitted(true);
+    const firstInvalid = FIELD_ORDER.find((field) => errors[field]);
+    if (firstInvalid) {
+      document.getElementById(firstInvalid)?.focus();
       return;
     }
-    if (new TextEncoder().encode(password).length > 72) {
-      setError("Password must be at most 72 UTF-8 bytes. Try fewer characters.");
-      return;
-    }
-    if (register && password !== data.get("confirmPassword")) {
-      setError("Passwords do not match.");
-      return;
-    }
-    void submit(mode, { email, password, ...(register ? { name } : {}) });
+    const email = values.email.trim();
+    const name = values.name.trim();
+    void submit(mode, { email, password: values.password, ...(register ? { name } : {}) });
   }
 
   if (auth.status === "loading" || auth.status === "authenticated") {
-    return (
-      <p className="auth-status" role="status">
-        Checking your session…
-      </p>
-    );
+    return <SessionStatus>Checking your session…</SessionStatus>;
   }
 
   if (auth.status === "error") {
@@ -113,6 +149,7 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
               : "Sign in to continue screening oral images and reviewing condition findings."}
           </p>
         </div>
+        <AuthShowcase />
         <p className="intro-footer">
           <Link href="/">← Back to home</Link>
         </p>
@@ -132,48 +169,55 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
               {error}
             </div>
           ) : null}
-          <form onSubmit={handleSubmit} aria-busy={busy}>
+          <form onSubmit={handleSubmit} aria-busy={busy} noValidate>
             <fieldset disabled={busy}>
               {register ? (
-                <label>
-                  Full name
-                  <input name="name" autoComplete="name" required maxLength={100} placeholder="Your full name" />
-                </label>
+                <TextField
+                  name="name"
+                  label="Full name"
+                  autoComplete="name"
+                  maxLength={100}
+                  placeholder="Your full name"
+                  value={values.name}
+                  onChange={(event) => update("name", event.target.value)}
+                  onBlur={blur("name")}
+                  error={shown("name")}
+                />
               ) : null}
-              <label>
-                Email address
-                <input
-                  name="email"
-                  type="email"
-                  autoComplete="email"
-                  required
-                  maxLength={254}
-                  placeholder="you@example.com"
-                  autoCapitalize="none"
-                  spellCheck={false}
-                />
-              </label>
-              <label>
-                Password
-                <input
-                  name="password"
-                  type="password"
-                  autoComplete={register ? "new-password" : "current-password"}
-                  required
-                  minLength={register ? 8 : undefined}
-                  aria-describedby={register ? "password-hint" : undefined}
-                />
-                {register ? (
-                  <span id="password-hint" className="field-hint">
-                    At least 8 characters; at most 72 bytes.
-                  </span>
-                ) : null}
-              </label>
+              <TextField
+                name="email"
+                label="Email address"
+                type="email"
+                autoComplete="email"
+                maxLength={254}
+                placeholder="you@example.com"
+                autoCapitalize="none"
+                spellCheck={false}
+                value={values.email}
+                onChange={(event) => update("email", event.target.value)}
+                onBlur={blur("email")}
+                error={shown("email")}
+              />
+              <PasswordField
+                name="password"
+                label="Password"
+                autoComplete={register ? "new-password" : "current-password"}
+                value={values.password}
+                onChange={(value) => update("password", value)}
+                onBlur={blur("password")}
+                error={shown("password")}
+                rules={register}
+              />
               {register ? (
-                <label>
-                  Confirm password
-                  <input name="confirmPassword" type="password" autoComplete="new-password" required minLength={8} />
-                </label>
+                <PasswordField
+                  name="confirmPassword"
+                  label="Confirm password"
+                  autoComplete="new-password"
+                  value={values.confirmPassword}
+                  onChange={(value) => update("confirmPassword", value)}
+                  onBlur={blur("confirmPassword")}
+                  error={shown("confirmPassword")}
+                />
               ) : null}
               <button className="primary-button" type="submit">
                 {busy ? "Please wait…" : register ? "Create account" : "Sign in"}

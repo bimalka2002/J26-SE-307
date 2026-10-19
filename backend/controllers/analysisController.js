@@ -2,7 +2,7 @@ import analysisModel from "../models/analysisModel.js";
 import { DEFAULT_REQUESTED_MODELS } from "../config/models.js";
 import { runPipeline } from "../workers/pipeline.js";
 import { removeSubmittedFiles } from "../middleware/upload.js";
-import { uploadImage, removeImage } from "../services/imageStorage.js";
+import { uploadImage, removeImage, readImage } from "../services/imageStorage.js";
 
 function parseClinicalData(raw) {
   if (raw == null || raw === "") return {};
@@ -96,5 +96,40 @@ export async function getAnalysis(req, res) {
   } catch (err) {
     console.error("get analysis error:", err);
     return res.status(500).json({ message: "Failed to fetch analysis" });
+  }
+}
+
+// Streams one uploaded image back to its owner so the results page can show what was analysed.
+export async function getAnalysisImage(req, res) {
+  try {
+    const { modality } = req.params;
+    if (!["oral_photo", "xray"].includes(modality)) {
+      return res.status(404).json({ message: "Image not found" });
+    }
+
+    const analysis = await analysisModel.findById(req.params.id);
+    if (!analysis) {
+      return res.status(404).json({ message: "Analysis not found" });
+    }
+
+    if (String(analysis.userId) !== String(req.user._id) && req.user.role !== "admin") {
+      return res.status(403).json({ message: "Forbidden" });
+    }
+
+    const input = analysis.inputs.find((item) => item.modality === modality);
+    if (!input) {
+      return res.status(404).json({ message: "Image not found" });
+    }
+
+    const bytes = await readImage(input);
+    res.set({
+      "Content-Type": input.mimeType || "application/octet-stream",
+      "Cache-Control": "private, max-age=300",
+      "X-Content-Type-Options": "nosniff",
+    });
+    return res.send(bytes);
+  } catch (err) {
+    console.error("get analysis image error:", err.message);
+    return res.status(500).json({ message: "Failed to load image" });
   }
 }

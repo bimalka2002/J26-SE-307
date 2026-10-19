@@ -9,7 +9,9 @@ import { Button } from "@/components/ui/Button";
 const links = [
   { href: "#home", id: "home", label: "Home" },
   { href: "#how-it-works", id: "how-it-works", label: "How it works" },
-  { href: "#features", id: "features", label: "Features" },
+  { href: "#conditions", id: "conditions", label: "Conditions" },
+  { href: "#features", id: "features", label: "Why OralScan" },
+  { href: "#faq", id: "faq", label: "FAQ" },
 ];
 
 export function Navbar() {
@@ -89,20 +91,10 @@ export function Navbar() {
         </nav>
 
         <div className="dv-nav-actions">
-          {!scrolled ? (
-            <button type="button" className="dv-lang" aria-label="Language">
-              <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
-                <circle cx="12" cy="12" r="9" />
-                <path d="M3 12h18M12 3c2.5 2.8 2.5 15.2 0 18M12 3c-2.5 2.8-2.5 15.2 0 18" />
-              </svg>
-              EN
-            </button>
-          ) : (
-            <Link href="/register" className="dv-nav-secondary">
-              Get Started
-            </Link>
-          )}
-          <AnimatedButton href="/login" className="dv-nav-signin" arrow={scrolled}>
+          <Link href="/register" className="dv-nav-secondary">
+            Get Started
+          </Link>
+          <AnimatedButton href="/login" className="dv-nav-signin">
             Sign In
           </AnimatedButton>
         </div>
