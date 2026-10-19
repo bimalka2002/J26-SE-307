@@ -3,6 +3,7 @@
 import type { ReactNode } from "react";
 import { useRequireAuth } from "@/components/app/useRequireAuth";
 import { AppNavbar } from "@/components/app/AppNavbar";
+import { SessionStatus } from "@/components/auth/SessionStatus";
 
 export function AuthGate({ children }: { children: ReactNode }) {
   const auth = useRequireAuth();
@@ -22,11 +23,7 @@ export function AuthGate({ children }: { children: ReactNode }) {
   }
 
   if (auth.status !== "authenticated" || !auth.user) {
-    return (
-      <p className="auth-status" role="status">
-        Checking your session…
-      </p>
-    );
+    return <SessionStatus>Checking your session…</SessionStatus>;
   }
 
   return (
