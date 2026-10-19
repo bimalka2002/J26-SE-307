@@ -4,9 +4,9 @@ const columns = [
   {
     title: "Product",
     links: [
-      { href: "#home", label: "Home" },
       { href: "#how-it-works", label: "How it works" },
-      { href: "#features", label: "Features" },
+      { href: "#conditions", label: "Conditions we screen for" },
+      { href: "#features", label: "Why OralScan" },
     ],
   },
   {
@@ -17,18 +17,18 @@ const columns = [
     ],
   },
   {
-    title: "Research",
+    title: "Help",
     links: [
-      { href: "#help", label: "About OralScan" },
-      { href: "#features", label: "AI models" },
-      { href: "#how-it-works", label: "How screening works" },
+      { href: "#faq", label: "FAQ" },
+      { href: "#faq-data", label: "Your images and data" },
+      { href: "#faq-diagnosis", label: "Is this a diagnosis?" },
     ],
   },
 ];
 
 export function Footer() {
   return (
-    <footer id="help" className="dv-footer">
+    <footer className="dv-footer">
       <div className="dv-footer-top">
         <div className="dv-footer-cta">
           <h2 className="dv-footer-headline">
@@ -36,13 +36,11 @@ export function Footer() {
             <span className="dv-footer-accent">Try it.</span>
           </h2>
           <div className="dv-footer-actions">
-            <Link href="/register" className="dv-footer-store">
-              <span className="dv-footer-store-kicker">Get started</span>
-              <span className="dv-footer-store-label">Create account</span>
+            <Link href="/register" className="dv-footer-btn dv-footer-btn-primary">
+              Create account
             </Link>
-            <Link href="/login" className="dv-footer-store">
-              <span className="dv-footer-store-kicker">Already have one?</span>
-              <span className="dv-footer-store-label">Sign in</span>
+            <Link href="/login" className="dv-footer-btn dv-footer-btn-secondary">
+              Sign in
             </Link>
           </div>
         </div>
@@ -65,6 +63,7 @@ export function Footer() {
 
       <div className="dv-footer-bottom">
         <p>© {new Date().getFullYear()} OralScan, SLIIT research project</p>
+        <p>Screening support only. Not a clinical diagnosis.</p>
       </div>
 
       <p className="dv-footer-watermark" aria-hidden>
