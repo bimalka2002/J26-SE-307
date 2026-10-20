@@ -1,11 +1,14 @@
 {
   "branch": "osmf",
-  "status": "provisional_development_only",
+  "status": "selected_for_pp1_integration_test_pending",
+  "architecture": "EfficientNetB0",
+  "selected_stage": "fine_tuned",
   "model_file": "osmf/model.keras",
   "source_checkpoint": "/content/drive/MyDrive/Research/Model_Training/outputs/osmf_EfficientNetB0/selected_final_model.keras",
   "checkpoint_name": "selected_final_model.keras",
   "sha256": "7f61a64c334effcae46a4cc22b09052054d9b92cb097ebb3e6170de4018f19eb",
   "bytes": 27801233,
+  "keras_model_name": "osmf_EfficientNetB0",
   "input_shape": [
     null,
     224,
@@ -35,6 +38,6 @@
   "resize": "resize_with_pad",
   "preprocess": "efficientnet_no_op",
   "provisional_threshold": 0.5,
-  "threshold_validated": false,
+  "threshold_validated_on_held_out_test": false,
   "test_set_evaluated_by_this_notebook": false
 }

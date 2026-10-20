@@ -5,6 +5,7 @@ import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
+from fastapi.responses import JSONResponse
 
 from model_registry import MODEL_SPECS, clear_models, load_errors, load_models, models, versions
 from prediction import decode_scores, pick_class
@@ -18,6 +19,8 @@ MAX_IMAGE_BYTES = 10 * 1024 * 1024
 async def lifespan(_app: FastAPI):
     load_models()
     try:
+        if not all(key in models for key in MODEL_SPECS):
+            raise RuntimeError(f"ML checkpoints unavailable: {load_errors}")
         yield
     finally:
         clear_models()
@@ -29,7 +32,7 @@ app = FastAPI(title="J26-SE-307 ML service", version="0.3.0", lifespan=lifespan)
 @app.get("/health")
 def health():
     return {
-        "ok": True,
+        "ok": all(key in models for key in MODEL_SPECS),
         "models": {
             key: {
                 "status": "loaded" if key in models else "unavailable",
@@ -40,6 +43,14 @@ def health():
             for key, spec in MODEL_SPECS.items()
         },
     }
+
+
+@app.get("/ready")
+def ready():
+    status = health()
+    if not status["ok"]:
+        return JSONResponse(status_code=503, content=status)
+    return status
 
 
 @app.post("/predict/{model_key}")
