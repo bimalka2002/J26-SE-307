@@ -3,16 +3,22 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../services/analysis_service.dart';
+import '../services/api_client.dart';
 import '../theme/app_colors.dart';
 import '../widgets/primary_button.dart';
+import 'results_screen.dart';
 
 enum _ScanStep { intro, oralPhoto, xray, clinical, review, done }
 
 class _PickedImage {
-  const _PickedImage({required this.bytes, required this.name});
+  const _PickedImage({required this.bytes, required this.name, required this.mimeType});
 
   final Uint8List bytes;
   final String name;
+  final String mimeType;
+
+  AnalysisUpload toUpload() => AnalysisUpload(bytes: bytes, filename: name, mimeType: mimeType);
 }
 
 class ScanScreen extends StatefulWidget {
@@ -33,6 +39,7 @@ class _ScanScreenState extends State<ScanScreen> {
   ];
 
   final _picker = ImagePicker();
+  final _analysisService = AnalysisService();
   final _ageController = TextEditingController();
   final _notesController = TextEditingController();
 
@@ -44,6 +51,8 @@ class _ScanScreenState extends State<ScanScreen> {
   String? _selectedSymptom;
   bool _submitting = false;
   String? _pickerError;
+  String? _submitError;
+  String? _analysisId;
 
   @override
   void dispose() {
@@ -55,8 +64,6 @@ class _ScanScreenState extends State<ScanScreen> {
   int get _stepIndex => _ScanStep.values.indexOf(_step);
 
   int get _progressCount => _ScanStep.values.length - 1; // exclude done
-
-  bool get _canContinueOral => _oralPhoto != null;
 
   bool get _canSubmit => _oralPhoto != null || _xray != null;
 
@@ -71,9 +78,19 @@ class _ScanScreenState extends State<ScanScreen> {
       );
       if (file == null) return;
       final bytes = await file.readAsBytes();
+      if (bytes.length > 10 * 1024 * 1024) {
+        throw const FormatException('Image is larger than 10 MB. Choose a smaller image.');
+      }
+      final mimeType = bytes.length >= 3 && bytes[0] == 0xff && bytes[1] == 0xd8 && bytes[2] == 0xff
+          ? 'image/jpeg'
+          : bytes.length >= 8 && bytes[0] == 0x89 && bytes[1] == 0x50 && bytes[2] == 0x4e && bytes[3] == 0x47
+              ? 'image/png'
+              : null;
+      if (mimeType == null) throw const FormatException('Choose a JPEG or PNG image.');
       final picked = _PickedImage(
         bytes: bytes,
-        name: file.name.isNotEmpty ? file.name : (forXray ? 'xray.jpg' : 'oral.jpg'),
+        name: '${forXray ? 'xray' : 'oral'}.${mimeType == 'image/png' ? 'png' : 'jpg'}',
+        mimeType: mimeType,
       );
       setState(() {
         if (forXray) {
@@ -82,6 +99,8 @@ class _ScanScreenState extends State<ScanScreen> {
           _oralPhoto = picked;
         }
       });
+    } on FormatException catch (error) {
+      setState(() => _pickerError = error.message);
     } catch (_) {
       setState(() {
         _pickerError = source == ImageSource.camera
@@ -159,13 +178,14 @@ class _ScanScreenState extends State<ScanScreen> {
   void _goNext() {
     setState(() {
       _pickerError = null;
+      _submitError = null;
       switch (_step) {
         case _ScanStep.intro:
           _step = _ScanStep.oralPhoto;
         case _ScanStep.oralPhoto:
-          if (_canContinueOral) _step = _ScanStep.xray;
+          _step = _ScanStep.xray;
         case _ScanStep.xray:
-          _step = _ScanStep.clinical;
+          if (_canSubmit) _step = _ScanStep.clinical;
         case _ScanStep.clinical:
           _step = _ScanStep.review;
         case _ScanStep.review:
@@ -207,19 +227,43 @@ class _ScanScreenState extends State<ScanScreen> {
       _notesController.clear();
       _submitting = false;
       _pickerError = null;
+      _submitError = null;
+      _analysisId = null;
     });
   }
 
   Future<void> _submit() async {
     if (!_canSubmit || _submitting) return;
-    setState(() => _submitting = true);
-    // UI-only for now — backend wiring comes next
-    await Future<void>.delayed(const Duration(milliseconds: 900));
-    if (!mounted) return;
-    setState(() {
-      _submitting = false;
-      _step = _ScanStep.done;
-    });
+    final ageText = _ageController.text.trim();
+    final age = int.tryParse(ageText);
+    if (ageText.isNotEmpty && (age == null || age < 1 || age > 120)) {
+      setState(() => _submitError = 'Enter an age between 1 and 120, or leave it blank.');
+      return;
+    }
+    final clinicalData = <String, dynamic>{
+      if (age != null) 'age': age,
+      if (_gender != null) 'gender': _gender,
+      if (_smokingHistory != null) 'smokingHistory': _smokingHistory,
+      if (_selectedSymptom != null) 'symptoms': [_selectedSymptom],
+      if (_notesController.text.trim().isNotEmpty) 'notes': _notesController.text.trim(),
+    };
+    setState(() { _submitting = true; _submitError = null; });
+    try {
+      final id = await _analysisService.create(
+        oralPhoto: _oralPhoto?.toUpload(),
+        xray: _xray?.toUpload(),
+        clinicalData: clinicalData,
+      );
+      if (!mounted) return;
+      setState(() { _analysisId = id; _step = _ScanStep.done; });
+      await Navigator.of(context).push(MaterialPageRoute<void>(
+        builder: (_) => ResultsScreen(analysisId: id),
+      ));
+    } on ApiException catch (error) {
+      if (mounted) setState(() => _submitError = error.message);
+    } finally {
+      if (mounted) setState(() => _submitting = false);
+    }
   }
 
   @override
@@ -263,33 +307,39 @@ class _ScanScreenState extends State<ScanScreen> {
         return _CaptureStep(
           bottomPad: bottomPad,
           title: 'Oral photo',
-          subtitle: 'Recommended for OLP, OSMF, and ELP models. Clear lighting helps.',
+          subtitle: 'Recommended for oral disease screening. You can skip this if you have a dental X-ray instead.',
           image: _oralPhoto,
           error: _pickerError,
-          required: true,
+          required: false,
           onPickTap: () => _showSourceSheet(forXray: false),
           onCamera: () => _pick(ImageSource.camera, forXray: false),
           onGallery: () => _pick(ImageSource.gallery, forXray: false),
           onClear: () => setState(() => _oralPhoto = null),
-          onContinue: _canContinueOral ? _goNext : null,
-          continueLabel: 'Continue',
+          onContinue: _goNext,
+          continueLabel: _oralPhoto == null ? 'Skip to X-ray' : 'Continue',
         );
       case _ScanStep.xray:
         return _CaptureStep(
           bottomPad: bottomPad,
           title: 'Dental X-ray',
-          subtitle: 'Optional — used mainly for caries screening. You can skip this step.',
+          subtitle: _oralPhoto == null
+              ? 'Add an X-ray to continue. At least one image is needed for screening.'
+              : 'Optional — used mainly for caries screening. You can skip this step.',
           image: _xray,
           error: _pickerError,
-          required: false,
+          required: _oralPhoto == null,
           onPickTap: () => _showSourceSheet(forXray: true),
           onCamera: () => _pick(ImageSource.camera, forXray: true),
           onGallery: () => _pick(ImageSource.gallery, forXray: true),
           onClear: () => setState(() => _xray = null),
-          onContinue: _goNext,
-          continueLabel: _xray == null ? 'Skip for now' : 'Continue',
-          secondaryLabel: _xray == null ? null : 'Skip for now',
-          onSecondary: _xray == null
+          onContinue: _canSubmit ? _goNext : null,
+          continueLabel: _xray != null
+              ? 'Continue'
+              : _oralPhoto != null
+                  ? 'Skip for now'
+                  : 'Add X-ray to continue',
+          secondaryLabel: _xray == null || _oralPhoto == null ? null : 'Skip for now',
+          onSecondary: _xray == null || _oralPhoto == null
               ? null
               : () => setState(() {
                     _xray = null;
@@ -321,10 +371,17 @@ class _ScanScreenState extends State<ScanScreen> {
           symptom: _selectedSymptom,
           notes: _notesController.text.trim(),
           submitting: _submitting,
+          error: _submitError,
           onSubmit: _canSubmit ? _submit : null,
         );
       case _ScanStep.done:
-        return _DoneStep(bottomPad: bottomPad, onAgain: _resetFlow);
+        return _DoneStep(
+          bottomPad: bottomPad,
+          onAgain: _resetFlow,
+          onViewResults: _analysisId == null ? null : () => Navigator.of(context).push(
+            MaterialPageRoute<void>(builder: (_) => ResultsScreen(analysisId: _analysisId!)),
+          ),
+        );
     }
   }
 }
@@ -420,21 +477,21 @@ class _IntroStep extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         Text(
-          'We’ll walk you through each input one step at a time.',
+          'Add an oral photo, a dental X-ray, or both. We’ll guide you through each step.',
           style: Theme.of(context).textTheme.bodyMedium,
         ),
         const SizedBox(height: 22),
         const _IntroCard(
           step: '01',
           title: 'Oral photo',
-          text: 'Take or upload an intraoral photo.',
+          text: 'Add a photo, or skip to the X-ray step.',
           icon: Icons.photo_camera_outlined,
         ),
         const SizedBox(height: 10),
         const _IntroCard(
           step: '02',
           title: 'Dental X-ray',
-          text: 'Optional — add if you have one.',
+          text: 'Add an X-ray if you skipped the oral photo, or include both.',
           icon: Icons.medical_information_outlined,
         ),
         const SizedBox(height: 10),
@@ -1031,6 +1088,7 @@ class _ReviewStep extends StatelessWidget {
     required this.symptom,
     required this.notes,
     required this.submitting,
+    required this.error,
     required this.onSubmit,
   });
 
@@ -1043,6 +1101,7 @@ class _ReviewStep extends StatelessWidget {
   final String? symptom;
   final String notes;
   final bool submitting;
+  final String? error;
   final VoidCallback? onSubmit;
 
   @override
@@ -1103,6 +1162,10 @@ class _ReviewStep extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 22),
+        if (error != null) ...[
+          Text(error!, style: const TextStyle(color: AppColors.error, fontWeight: FontWeight.w600)),
+          const SizedBox(height: 12),
+        ],
         PrimaryButton(
           label: 'Run screening',
           onPressed: onSubmit,
@@ -1220,10 +1283,11 @@ class _ReviewRow extends StatelessWidget {
 }
 
 class _DoneStep extends StatelessWidget {
-  const _DoneStep({required this.bottomPad, required this.onAgain});
+  const _DoneStep({required this.bottomPad, required this.onAgain, required this.onViewResults});
 
   final double bottomPad;
   final VoidCallback onAgain;
+  final VoidCallback? onViewResults;
 
   @override
   Widget build(BuildContext context) {
@@ -1254,11 +1318,13 @@ class _DoneStep extends StatelessWidget {
         ),
         const SizedBox(height: 10),
         Text(
-          'Your images are ready for analysis. Backend processing will be connected next — for now this completes the capture flow.',
+          'Your images were uploaded. The models are processing them, and you can check the results at any time.',
           textAlign: TextAlign.center,
           style: Theme.of(context).textTheme.bodyMedium,
         ),
         const SizedBox(height: 28),
+        PrimaryButton(label: 'View screening results', onPressed: onViewResults),
+        const SizedBox(height: 12),
         PrimaryButton(label: 'Start another screening', onPressed: onAgain),
       ],
     );

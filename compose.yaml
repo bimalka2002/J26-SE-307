@@ -21,6 +21,7 @@ services:
     environment:
       PORT: "5000"
       ML_SERVICE_URL: http://ml-service:8000
+      FRONTEND_ORIGIN: http://localhost:3000,http://localhost:7357
     extra_hosts:
       - "host.docker.internal:host-gateway"
     ports:
@@ -28,3 +29,6 @@ services:
     depends_on:
       ml-service:
         condition: service_healthy
+    dns:
+      - 1.1.1.1
+      - 8.8.8.8

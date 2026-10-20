@@ -117,5 +117,13 @@ test("Google never silently links a password account or another Google sub with 
 test("Google returns a clear configuration error without a web client ID", async () => {
   const previous = process.env.GOOGLE_CLIENT_ID;
   delete process.env.GOOGLE_CLIENT_ID;
-  try { await google("test").expect(503); } finally { process.env.GOOGLE_CLIENT_ID = previous; }
+  try {
+    await google("test").expect(503);
+    await request(app).get("/auth/google/config").expect(503);
+  } finally { process.env.GOOGLE_CLIENT_ID = previous; }
+});
+
+test("Google exposes only its public client ID for mobile setup", async () => {
+  const response = await request(app).get("/auth/google/config").expect(200);
+  assert.deepEqual(response.body, { clientId: process.env.GOOGLE_CLIENT_ID });
 });

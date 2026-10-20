@@ -1,6 +1,7 @@
 import '../models/user.dart';
 import 'api_client.dart';
 import 'auth_storage.dart';
+import 'google_auth_service.dart';
 
 class AuthService {
   AuthService({
@@ -76,6 +77,12 @@ class AuthService {
     _token = null;
     currentUser = null;
     await _storage.clear();
+    await GoogleAuthService.instance.signOut();
+  }
+
+  Future<AuthSession> googleLogin(String credential) async {
+    final data = await _api.post('/auth/google', body: {'credential': credential});
+    return _persist(data);
   }
 
   Future<AuthSession> _persist(Map<String, dynamic> data) async {

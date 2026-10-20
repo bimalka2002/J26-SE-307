@@ -112,6 +112,14 @@ export async function googleLogin(req, res) {
   }
 }
 
+// The OAuth client ID is public browser configuration. Never return a client secret.
+export function googleClientConfig(_req, res) {
+  if (!process.env.GOOGLE_CLIENT_ID) {
+    return res.status(503).json({ message: "Google sign-in is not configured yet. Please use email and password." });
+  }
+  return res.json({ clientId: process.env.GOOGLE_CLIENT_ID });
+}
+
 export function me(req, res) {
   return res.json({ user: publicUser(req.user) });
 }

@@ -91,7 +91,21 @@ async function fetchAnalysis(id) {
 
 test("rejects unauthenticated create and get", async () => {
   await request(app).post("/analyses").expect(401);
+  await request(app).get("/analyses").expect(401);
   await request(app).get("/analyses/507f1f77bcf86cd799439011").expect(401);
+});
+
+test("history lists only the signed-in user's analyses, newest first", async () => {
+  const other = await request(app).post("/auth/register").send({
+    name: "Other User", email: "other@example.com", password: "valid-password-42",
+  }).expect(201);
+  const first = await analysisModel.create({ userId, status: "completed", createdAt: new Date("2026-01-01") });
+  const second = await analysisModel.create({ userId, status: "queued", createdAt: new Date("2026-01-02") });
+  await analysisModel.create({ userId: other.body.user.id, status: "failed", createdAt: new Date("2026-01-03") });
+
+  const response = await auth(request(app).get("/analyses")).expect(200);
+  assert.deepEqual(response.body.analyses.map((item) => item._id), [String(second._id), String(first._id)]);
+  assert.ok(response.body.analyses.every((item) => !item.userId && !item.clinicalData));
 });
 
 test("rejects create with no images", async () => {
@@ -258,10 +272,10 @@ test("a second upload failure rolls back the first asset", async (t) => {
   const upload = cloudinary.uploader.upload;
   let calls = 0;
   t.mock.method(cloudinary.uploader, "upload", async (...args) => {
-    if (++calls === 2) throw new Error("Cloudinary unavailable");
+    if (++calls === 2) throw { error: { message: "Cloudinary unavailable" }, http_code: 503 };
     return upload(...args);
   });
-  await createAnalysis({ oral: "oral.png", xray: "xray.jpg" }).expect(500);
+  await createAnalysis({ oral: "oral.png", xray: "xray.jpg" }).expect(502);
   assert.equal(await analysisModel.countDocuments(), 0);
   assert.equal(storage.assets.size, 0);
   assert.deepEqual(storage.destroyed, [storage.uploads[0].publicId]);
