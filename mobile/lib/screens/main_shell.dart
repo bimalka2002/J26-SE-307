@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../services/auth_service.dart';
 import '../theme/app_colors.dart';
 import 'home_screen.dart';
 import 'login_screen.dart';
@@ -26,7 +27,9 @@ class _MainShellState extends State<MainShell> {
 
   void _openTab(int index) => setState(() => _index = index);
 
-  void _signOut() {
+  Future<void> _signOut() async {
+    await AuthService.instance.logout();
+    if (!mounted) return;
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute<void>(builder: (_) => const LoginScreen()),
       (_) => false,

@@ -16,7 +16,28 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-app.use(cors({ origin: process.env.FRONTEND_ORIGIN || "http://localhost:3000" }));
+const allowedOrigins = (process.env.FRONTEND_ORIGIN || "http://localhost:3000")
+  .split(",")
+  .map((value) => value.trim())
+  .filter(Boolean);
+
+app.use(
+  cors({
+    origin(origin, callback) {
+      // Native mobile clients and same-origin tools often omit Origin.
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.includes(origin)) return callback(null, true);
+      // Allow local Flutter web / tooling during development.
+      if (
+        process.env.NODE_ENV !== "production" &&
+        /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)
+      ) {
+        return callback(null, true);
+      }
+      return callback(null, false);
+    },
+  }),
+);
 app.use(express.json());
 
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
