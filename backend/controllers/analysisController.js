@@ -1,4 +1,5 @@
 import analysisModel from "../models/analysisModel.js";
+import fs from "node:fs/promises";
 import { DEFAULT_REQUESTED_MODELS } from "../config/models.js";
 import { runPipeline } from "../workers/pipeline.js";
 import { removeSubmittedFiles } from "../middleware/upload.js";
@@ -16,6 +17,7 @@ function parseClinicalData(raw) {
 
 export async function createAnalysis(req, res) {
   const inputs = [];
+  const imageBytes = new Map();
   let persisted = false;
   try {
     const oralPhoto = req.files?.oral_photo?.[0];
@@ -35,7 +37,11 @@ export async function createAnalysis(req, res) {
     ].filter(Boolean);
     // Track each success so a later upload or database failure can be rolled back.
     for (const { modality, file } of submissions) {
+      // The temporary upload is already on this server. Keep its bytes for the
+      // in-process pipeline instead of downloading it back from Cloudinary.
+      const bytes = await fs.readFile(file.path);
       inputs.push({ modality, ...await uploadImage(file) });
+      imageBytes.set(modality, bytes);
     }
     await removeSubmittedFiles(req);
 
@@ -54,7 +60,8 @@ export async function createAnalysis(req, res) {
       analysis._id,
       analysis.inputs,
       analysis.clinicalData,
-      analysis.requestedModels
+      analysis.requestedModels,
+      imageBytes
     );
 
     return res.status(202).json({

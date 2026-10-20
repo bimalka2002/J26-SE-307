@@ -8,8 +8,7 @@ function mlBaseUrl() {
   return (process.env.ML_SERVICE_URL || "http://localhost:8000").replace(/\/+$/, "");
 }
 
-async function callModel(modelKey, input, clinicalData) {
-  const fileBytes = await readImage(input);
+async function callModel(modelKey, input, fileBytes, clinicalData) {
   const form = new FormData();
   form.append(
     "image",
@@ -42,10 +41,13 @@ export function deriveStatus(results) {
   return "completed";
 }
 
-export async function runPipeline(analysisId, inputs, clinicalData, requestedModels) {
+export async function runPipeline(analysisId, inputs, clinicalData, requestedModels, imageBytes = new Map()) {
   try {
     await analysisModel.findByIdAndUpdate(analysisId, { status: "running", error: undefined });
     const inputMap = Object.fromEntries(inputs.map((input) => [input.modality, input]));
+    // New uploads arrive with their bytes. Older/direct jobs fetch from storage
+    // once per image; cache a failed download so it cannot repeat per model.
+    const imageDownloads = new Map(imageBytes);
     const results = [];
 
     for (const modelKey of requestedModels || []) {
@@ -62,7 +64,11 @@ export async function runPipeline(analysisId, inputs, clinicalData, requestedMod
         continue;
       }
       try {
-        const result = await callModel(modelKey, input, clinicalData);
+        if (!imageDownloads.has(requiredModality)) {
+          imageDownloads.set(requiredModality, readImage(input));
+        }
+        const fileBytes = await imageDownloads.get(requiredModality);
+        const result = await callModel(modelKey, input, fileBytes, clinicalData);
         results.push({
           modelKey, modelVersion: result.modelVersion,
           status: "completed", inputModality: requiredModality,

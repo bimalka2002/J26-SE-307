@@ -9,6 +9,7 @@ import authRoutes from "../routes/authRoutes.js";
 import analysisRoutes from "../routes/analysisRoutes.js";
 import User from "../models/userModel.js";
 import analysisModel from "../models/analysisModel.js";
+import { runPipeline } from "../workers/pipeline.js";
 import { DEFAULT_REQUESTED_MODELS, MODEL_ROUTING } from "../config/models.js";
 import { startMongo } from "./helpers/mongo.js";
 import {
@@ -141,7 +142,7 @@ test("oral_photo only: queues analysis, runs photo models, skips xray model", as
   assert.equal(analysis.inputs[0].storageProvider, "cloudinary");
   assert.equal(analysis.inputs[0].storageKey, storage.uploads[0].publicId);
   assert.equal(analysis.inputs[0].format, "png");
-  assert.ok(storage.downloads.length > 0);
+  assert.equal(storage.downloads.length, 0);
   await assert.rejects(access(storage.uploads[0].path), { code: "ENOENT" });
 
   for (const [modelKey, modality] of Object.entries(MODEL_ROUTING)) {
@@ -162,6 +163,7 @@ test("xray only: queues analysis, runs caries_xray, skips oral_photo models", as
   assert.equal(analysis.inputs.length, 1);
   assert.equal(analysis.inputs[0].modality, "xray");
   assert.equal(analysis.inputs[0].mimeType, "image/png");
+  assert.equal(storage.downloads.length, 0);
 
   for (const [modelKey, modality] of Object.entries(MODEL_ROUTING)) {
     assert.equal(byKey[modelKey].status, modality === "xray" ? "completed" : "skipped");
@@ -184,12 +186,40 @@ test("oral_photo + xray (jpeg): all requested models complete with scores", asyn
     analysis.inputs.map((i) => i.modality).sort(),
     ["oral_photo", "xray"]
   );
+  assert.equal(storage.downloads.length, 0);
 
   for (const modelKey of DEFAULT_REQUESTED_MODELS) {
     assert.equal(byKey[modelKey].status, "completed");
     assert.ok(byKey[modelKey].predictedClass);
     assert.ok(byKey[modelKey].classScores);
     assert.equal(byKey[modelKey].inputModality, MODEL_ROUTING[modelKey]);
+  }
+});
+
+test("one failed image download does not repeat for every oral model", async (t) => {
+  const created = await createAnalysis({ oral: "oral.png" }).expect(202);
+  const completed = await waitForTerminal(() => fetchAnalysis(created.body.analysisId));
+  assert.equal(completed.status, "completed");
+  assert.equal(storage.downloads.length, 0);
+
+  const fetch = globalThis.fetch;
+  let downloadAttempts = 0;
+  t.mock.method(globalThis, "fetch", async (url, options) => {
+    if (new URL(url).hostname === "api.cloudinary.com") {
+      downloadAttempts += 1;
+      return new Response("storage unavailable", { status: 503 });
+    }
+    return fetch(url, options);
+  });
+
+  // A direct/restarted job has no in-memory upload bytes and reads storage.
+  await runPipeline(created.body.analysisId, completed.inputs, completed.clinicalData, completed.requestedModels);
+  const analysis = await fetchAnalysis(created.body.analysisId);
+
+  assert.equal(analysis.status, "failed");
+  assert.equal(downloadAttempts, 1);
+  for (const result of analysis.modelResults) {
+    assert.equal(result.status, result.modelKey === "caries_xray" ? "skipped" : "failed");
   }
 });
 
@@ -265,6 +295,7 @@ test("streams an uploaded image back to its owner only", async () => {
   const image = await auth(request(app).get(`/analyses/${id}/images/oral_photo`)).expect(200);
   assert.equal(image.headers["content-type"], "image/png");
   assert.ok(image.body.length > 0);
+  assert.equal(storage.downloads.length, 1);
 
   await auth(request(app).get(`/analyses/${id}/images/xray`)).expect(404);
   await auth(request(app).get(`/analyses/${id}/images/other`)).expect(404);

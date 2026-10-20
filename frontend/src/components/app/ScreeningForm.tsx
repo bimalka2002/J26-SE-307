@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { AnimatedButton } from "@/components/ui/AnimatedButton";
 import { ImageSlot, formatSize, type PickedImage } from "@/components/app/ImageSlot";
@@ -128,6 +129,31 @@ export function ScreeningForm() {
 
   return (
     <section id="new-screening" className="app-panel app-panel-home">
+      {busy && typeof document !== "undefined"
+        ? createPortal(
+            <div className="app-upload-overlay" role="status" aria-live="polite" aria-busy="true">
+              <div className="app-loader">
+                <div className="app-loader-visual" aria-hidden="true">
+                  <span className="app-loader-orbit app-loader-orbit-outer" />
+                  <span className="app-loader-orbit app-loader-orbit-inner" />
+                  <span className="app-loader-beam" />
+                  <span className="app-loader-core" />
+                </div>
+                <p className="app-eyebrow">Starting screening</p>
+                <h1>Uploading your images</h1>
+                <p className="app-loader-copy">
+                  Your images are being saved. Screening will start automatically when the upload finishes.
+                </p>
+                <ol className="app-loader-steps">
+                  <li className="is-active"><span className="app-loader-step-dot" />Uploading images</li>
+                  <li><span className="app-loader-step-dot" />Running models</li>
+                  <li><span className="app-loader-step-dot" />Preparing results</li>
+                </ol>
+              </div>
+            </div>,
+            document.body,
+          )
+        : null}
       <div className="app-panel-head app-panel-head-home">
         <h2>New screening</h2>
         <p>

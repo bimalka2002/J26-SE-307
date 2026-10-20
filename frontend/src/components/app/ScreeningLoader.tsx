@@ -82,7 +82,7 @@ export function ScreeningLoader({ analysisId }: { analysisId: string }) {
         <p className="app-eyebrow">Screening in progress</p>
         <h1>Analysing your images</h1>
         <p className="app-loader-copy">
-          Specialist models are reviewing your oral photo and X-ray. You’ll be taken to your results
+          Specialist models are reviewing your uploaded images. You’ll be taken to your results
           when screening finishes.
         </p>
 
