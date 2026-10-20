@@ -1,11 +1,14 @@
 {
   "branch": "caries_intraoral",
-  "status": "provisional_development_only",
+  "status": "selected_for_pp1_integration_test_pending",
+  "architecture": "MobileNetV2",
+  "selected_stage": "fine_tuned",
   "model_file": "caries_intraoral/model.keras",
-  "source_checkpoint": "/content/drive/MyDrive/Research/Model_Training/outputs/caries_EfficientNetB0/AlphaDent/best_finetuned.keras",
-  "checkpoint_name": "best_finetuned.keras",
-  "sha256": "22d7697cef74c33fb9719324e82c6043a4d60cb9489421f24447a570e1c7d4c7",
-  "bytes": 28928938,
+  "source_checkpoint": "/content/drive/MyDrive/Research/Model_Training/outputs/comparator_runs/caries_intraoral_MobileNetV2_v1/selected_model.keras",
+  "checkpoint_name": "selected_model.keras",
+  "sha256": "15ff8c7187f6f1ff1add75880117082230d50a885ce7d53eeef219a200c7c1cb",
+  "bytes": 9615631,
+  "keras_model_name": "caries_intraoral_MobileNetV2",
   "input_shape": [
     null,
     224,
@@ -33,8 +36,8 @@
   ],
   "output": "sigmoid",
   "resize": "resize",
-  "preprocess": "none_external_efficientnet_internal",
+  "preprocess": "mobilenet_v2",
   "provisional_threshold": 0.5,
-  "threshold_validated": false,
+  "threshold_validated_on_held_out_test": false,
   "test_set_evaluated_by_this_notebook": false
 }

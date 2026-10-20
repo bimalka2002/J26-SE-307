@@ -3,7 +3,10 @@ import { readImage } from "../services/imageStorage.js";
 import analysisModel from "../models/analysisModel.js";
 import { MODEL_ROUTING } from "../config/models.js";
 
-const ML_BASE = (process.env.ML_SERVICE_URL || "http://localhost:8000").replace(/\/$/, "");
+function mlBaseUrl() {
+  // index.js loads .env after importing routes, so resolve this at request time.
+  return (process.env.ML_SERVICE_URL || "http://localhost:8000").replace(/\/+$/, "");
+}
 
 async function callModel(modelKey, input, clinicalData) {
   const fileBytes = await readImage(input);
@@ -15,7 +18,7 @@ async function callModel(modelKey, input, clinicalData) {
   );
   form.append("clinical_data", JSON.stringify(clinicalData || {}));
 
-  const response = await fetch(`${ML_BASE}/predict/${modelKey}`, {
+  const response = await fetch(`${mlBaseUrl()}/predict/${modelKey}`, {
     method: "POST",
     body: form,
     signal: AbortSignal.timeout(120_000),

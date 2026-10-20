@@ -1,11 +1,14 @@
 {
   "branch": "caries_xray",
-  "status": "provisional_development_only",
+  "status": "selected_for_pp1_integration_test_pending",
+  "architecture": "ResNet50",
+  "selected_stage": "frozen",
   "model_file": "caries_xray/model.keras",
-  "source_checkpoint": "/content/drive/MyDrive/Research/Model_Training/outputs/caries_EfficientNetB0/DENTEX/best_finetuned.keras",
-  "checkpoint_name": "best_finetuned.keras",
-  "sha256": "9abe2ee1b33fcae65159e2b2cce4abe476a0923ea28b8923563057458bf110af",
-  "bytes": 28928970,
+  "source_checkpoint": "/content/drive/MyDrive/Research/Model_Training/outputs/comparator_runs/caries_xray_ResNet50_v1/selected_model.keras",
+  "checkpoint_name": "selected_model.keras",
+  "sha256": "3a1d08c10592d193682267c377971b7d6956ce6e561044beaa4e65198dfa196e",
+  "bytes": 95007141,
+  "keras_model_name": "caries_xray_ResNet50",
   "input_shape": [
     null,
     224,
@@ -33,8 +36,8 @@
   ],
   "output": "sigmoid",
   "resize": "resize",
-  "preprocess": "none_external_efficientnet_internal",
+  "preprocess": "resnet50",
   "provisional_threshold": 0.5,
-  "threshold_validated": false,
+  "threshold_validated_on_held_out_test": false,
   "test_set_evaluated_by_this_notebook": false
 }

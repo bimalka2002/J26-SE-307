@@ -8,6 +8,8 @@ SLIIT research project for AI-assisted oral disease analysis. The system accepts
 J26-SE-307/
 ├── frontend/     # Next.js web app
 ├── backend/      # Express API + MongoDB
+├── ml-service/   # FastAPI + five Keras checkpoints
+├── compose.yaml   # Local backend + ML containers
 └── notebooks/    # Model training (Colab)
     ├── OLP.ipynb      # Oral Lichen Planus training
     └── Caries.ipynb   # Dental caries (AlphaDent / DENTEX)
@@ -19,7 +21,7 @@ J26-SE-307/
 | --- | --- |
 | Frontend | Next.js 16, React 19, TypeScript, Tailwind CSS |
 | Backend | Node.js (ESM), Express 5, MongoDB (Mongoose), JWT auth |
-| ML | TensorFlow / Keras notebooks (Google Colab) |
+| ML | TensorFlow / Keras notebooks (Google Colab), FastAPI inference service |
 
 ## Prerequisites
 
@@ -41,6 +43,7 @@ PORT=5000
 MONGODB_URI=mongodb://127.0.0.1:27017/j26-se-307
 JWT_SECRET=replace-with-a-long-random-secret
 JWT_EXPIRES_IN=7d
+ML_SERVICE_URL=http://localhost:8000
 ```
 
 Run the API:
@@ -71,7 +74,11 @@ The existing screening form uploads through authenticated `POST /analyses` using
 
 The backend stores images as Cloudinary **authenticated** assets and saves their public IDs, format, and file metadata in MongoDB. Temporary local uploads are removed after processing. If another upload or database creation fails, the backend attempts to delete assets already uploaded for that request and logs any cleanup failures. Missing Cloudinary credentials return HTTP 503; other upload failures return HTTP 500.
 
-The ML worker retrieves images using five-minute signed download URLs and forwards their bytes to the existing FastAPI service. Older analyses with local file paths remain readable; existing images are not migrated automatically. `GET /analyses/:id` remains restricted to the owner or an admin. See [Cloudinary's authenticated asset documentation](https://cloudinary.com/documentation/control_access_to_media) for the storage access behavior.
+The ML worker retrieves images using five-minute signed download URLs and forwards their bytes to the FastAPI service. Older analyses with local file paths remain readable; existing images are not migrated automatically. `GET /analyses/:id` remains restricted to the owner or an admin. See [Cloudinary's authenticated asset documentation](https://cloudinary.com/documentation/control_access_to_media) for the storage access behavior.
+
+## ML service and Docker
+
+The [ML service Docker guide](ml-service/README.md) covers the five packaged checkpoints, local Docker and Compose commands, the `ML_SERVICE_URL` backend connection, memory checks, and Render deployment. The two caries checkpoints run separately for intraoral photos and dental X-rays.
 
 Run `npm test` in `backend` for the API, pipeline, and image-storage tests. Tests mock Cloudinary and the ML service, and use a disposable MongoDB instance; no real Cloudinary credentials are required.
 
@@ -104,6 +111,6 @@ Open them in Colab from the GitHub repo, or upload locally.
 
 The existing Next.js frontend now provides `/login`, `/register`, and a minimal protected `/app` landing page. The API exposes `POST /auth/register`, `POST /auth/login`, `POST /auth/google`, and protected `GET /auth/me`. Password and Google sign-in both return the same OralScan bearer JWT session. The browser stores that JWT locally and checks it against `/auth/me` on refresh; sign out removes it. An unauthenticated visit to `/app` returns to `/login` with the intended route preserved.
 
-Copy `backend/.env.example` to `backend/.env`, set a strong random `JWT_SECRET` and your MongoDB URI, then set `GOOGLE_CLIENT_ID` to your Google OAuth **Web application client ID**. Copy `frontend/.env.example` to `frontend/.env.local`; set `NEXT_PUBLIC_API_URL` and `NEXT_PUBLIC_GOOGLE_CLIENT_ID` to the API URL and the **same Web client ID**. These public client ID values are safe to include in browser code; never put a Google client secret in either frontend environment variable. This Google Identity Services ID-token flow does not use a Google client secret. `JWT_SECRET` is separate and signs OralScan's application session.
+If `backend/.env` does not exist, copy `backend/.env.example` to it. Set a strong random `JWT_SECRET` and your MongoDB URI, then set `GOOGLE_CLIENT_ID` to your Google OAuth **Web application client ID**. Copy `frontend/.env.example` to `frontend/.env.local`; set `NEXT_PUBLIC_API_URL` and `NEXT_PUBLIC_GOOGLE_CLIENT_ID` to the API URL and the **same Web client ID**. These public client ID values are safe to include in browser code; never put a Google client secret in either frontend environment variable. This Google Identity Services ID-token flow does not use a Google client secret. `JWT_SECRET` is separate and signs OralScan's application session.
 
 To configure Google sign-in, create an OAuth 2.0 client with application type **Web application** in Google Cloud Console, then add `http://localhost:3000` under **Authorized JavaScript origins**. Add your deployed site's origin there before deploying. The browser and backend must use the same client ID. Start MongoDB, then run `npm run dev` in `backend` and `npm run dev` in `frontend`. Use `npm test` in `backend` for the isolated authentication API tests.

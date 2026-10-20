@@ -27,6 +27,7 @@ def preprocess_image(file_bytes: bytes, model_key: str) -> np.ndarray:
         elif spec["preprocess"] != "none":
             raise ValueError(f"Unknown preprocessing: {spec['preprocess']}")
         # EfficientNet checkpoints rescale internally; retain float32 [0, 255].
+        # MobileNetV2 and ResNet50 checkpoints require the external transforms above.
         return tf.expand_dims(image, axis=0).numpy()
     except (tf.errors.OpError, ValueError) as exc:
         raise ValueError("Invalid or unsupported image") from exc

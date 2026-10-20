@@ -1,11 +1,14 @@
 {
   "branch": "leukoplakia_erythroplakia",
-  "status": "provisional_development_only",
+  "status": "selected_for_pp1_integration_test_pending",
+  "architecture": "MobileNetV2",
+  "selected_stage": "fine_tuned",
   "model_file": "leukoplakia_erythroplakia/model.keras",
-  "source_checkpoint": "/content/drive/MyDrive/Research/Model_Training/outputs/leukoplakia_erythroplakia_3class_ResNet50/best_finetuned_model.keras",
-  "checkpoint_name": "best_finetuned_model.keras",
-  "sha256": "567e939d42328ee6ef2cb970dec8f884008e24336eb90e6170762ea3558080b2",
-  "bytes": 210520510,
+  "source_checkpoint": "/content/drive/MyDrive/Research/Model_Training/outputs/comparator_runs/lpep_MobileNetV2_v1/selected_model.keras",
+  "checkpoint_name": "selected_model.keras",
+  "sha256": "f7cc3e9db752e75476d085b2b13cfce7bce3a5a669645429dc111e529da1b3f3",
+  "bytes": 9625872,
+  "keras_model_name": "lpep_MobileNetV2",
   "input_shape": [
     null,
     224,
@@ -34,8 +37,8 @@
   ],
   "output": "softmax",
   "resize": "resize_with_pad",
-  "preprocess": "resnet50",
+  "preprocess": "mobilenet_v2",
   "provisional_threshold": null,
-  "threshold_validated": false,
+  "threshold_validated_on_held_out_test": false,
   "test_set_evaluated_by_this_notebook": false
 }

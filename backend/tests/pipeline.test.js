@@ -125,6 +125,33 @@ test("oral_photo + xray: every requested model completes", async () => {
   }
 });
 
+test("ML_SERVICE_URL set after imports routes model requests to the configured service", async () => {
+  const previous = process.env.ML_SERVICE_URL;
+  process.env.ML_SERVICE_URL = "http://ml-service:8000/";
+  restoreFetch();
+  let calledUrl;
+  restoreFetch = installMockMl((modelKey, url) => {
+    calledUrl = String(url);
+    return {
+      modelKey,
+      status: "completed",
+      modelVersion: "test-1.0",
+      predictedClass: "no_caries",
+      classScores: { no_caries: 0.9, caries: 0.1 },
+    };
+  });
+
+  try {
+    const path = await writeTempImage(".png");
+    const analysis = await runWith([oralInput(path)], ["caries_intraoral"]);
+    assert.equal(analysis.status, "completed");
+    assert.equal(calledUrl, "http://ml-service:8000/predict/caries_intraoral");
+  } finally {
+    if (previous === undefined) delete process.env.ML_SERVICE_URL;
+    else process.env.ML_SERVICE_URL = previous;
+  }
+});
+
 test("unknown model key is failed; remaining models still run", async () => {
   const path = await writeTempImage(".png");
   const analysis = await runWith([oralInput(path)], ["elp", "not_a_real_model"]);
