@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../services/auth_service.dart';
 import '../theme/app_colors.dart';
+import 'history_screen.dart';
 import 'home_screen.dart';
 import 'login_screen.dart';
 import 'scan_screen.dart';
@@ -18,6 +19,7 @@ class MainShell extends StatefulWidget {
 
 class _MainShellState extends State<MainShell> {
   late int _index;
+  int _historyVersion = 0;
 
   @override
   void initState() {
@@ -25,7 +27,10 @@ class _MainShellState extends State<MainShell> {
     _index = widget.initialIndex;
   }
 
-  void _openTab(int index) => setState(() => _index = index);
+  void _openTab(int index) => setState(() {
+        _index = index;
+        if (index == 2) _historyVersion++;
+      });
 
   Future<void> _signOut() async {
     await AuthService.instance.logout();
@@ -45,11 +50,7 @@ class _MainShellState extends State<MainShell> {
         onViewHistory: () => _openTab(2),
       ),
       const ScanScreen(),
-      const _PlaceholderTab(
-        title: 'History',
-        subtitle: 'Your past screenings will appear here.',
-        icon: Icons.history_rounded,
-      ),
+      HistoryScreen(key: ValueKey(_historyVersion)),
       _AccountTab(
         userName: widget.userName,
         onSignOut: _signOut,
@@ -215,72 +216,6 @@ class _NavItem extends StatelessWidget {
   }
 }
 
-class _PlaceholderTab extends StatelessWidget {
-  const _PlaceholderTab({
-    required this.title,
-    required this.subtitle,
-    required this.icon,
-    this.actionLabel,
-    this.onAction,
-  });
-
-  final String title;
-  final String subtitle;
-  final IconData icon;
-  final String? actionLabel;
-  final VoidCallback? onAction;
-
-  @override
-  Widget build(BuildContext context) {
-    return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(22, 28, 22, 88),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              title,
-              style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontSize: 28),
-            ),
-            const SizedBox(height: 10),
-            Text(subtitle, style: Theme.of(context).textTheme.bodyMedium),
-            const Spacer(),
-            Center(
-              child: Container(
-                width: 88,
-                height: 88,
-                decoration: BoxDecoration(
-                  color: AppColors.surface,
-                  borderRadius: BorderRadius.circular(24),
-                  border: Border.all(color: AppColors.line),
-                ),
-                child: Icon(icon, size: 36, color: AppColors.accent),
-              ),
-            ),
-            const Spacer(),
-            if (actionLabel != null && onAction != null)
-              SizedBox(
-                width: double.infinity,
-                height: 52,
-                child: FilledButton(
-                  onPressed: onAction,
-                  style: FilledButton.styleFrom(
-                    backgroundColor: AppColors.ink,
-                    foregroundColor: AppColors.surface,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: Text(actionLabel!),
-                ),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 class _AccountTab extends StatelessWidget {
   const _AccountTab({required this.onSignOut, this.userName});
 
@@ -343,11 +278,11 @@ class _AccountTab extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 14),
-          Container(
-            decoration: BoxDecoration(
-              color: AppColors.surface,
+          Material(
+            color: AppColors.surface,
+            shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: AppColors.line),
+              side: const BorderSide(color: AppColors.line),
             ),
             child: ListTile(
               leading: const Icon(Icons.logout_rounded, color: AppColors.ink),

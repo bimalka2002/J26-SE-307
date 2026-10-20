@@ -19,6 +19,7 @@ export async function createAnalysis(req, res) {
   const inputs = [];
   const imageBytes = new Map();
   let persisted = false;
+  let stage = "validate request";
   try {
     const oralPhoto = req.files?.oral_photo?.[0];
     const xray = req.files?.xray?.[0];
@@ -39,13 +40,16 @@ export async function createAnalysis(req, res) {
     for (const { modality, file } of submissions) {
       // The temporary upload is already on this server. Keep its bytes for the
       // in-process pipeline instead of downloading it back from Cloudinary.
+      stage = `read ${modality} upload`;
       const bytes = await fs.readFile(file.path);
+      stage = `store ${modality} image`;
       inputs.push({ modality, ...await uploadImage(file) });
       imageBytes.set(modality, bytes);
     }
     await removeSubmittedFiles(req);
 
     // ELP-only by default; teammates extend requestedModels later.
+    stage = "create analysis record";
     const analysis = await analysisModel.create({
       userId: req.user._id,
       inputs,
@@ -78,9 +82,15 @@ export async function createAnalysis(req, res) {
         }
       });
     }
-    console.error("create analysis error:", err.message);
-    if (err.code === "IMAGE_STORAGE_UNAVAILABLE") {
+    const details = err instanceof Error ? err.message :
+      (err && typeof err === "object" ? err.message || err.error?.message || err.error : String(err));
+    console.error(`create analysis error (${stage}):`, details || "Unknown error",
+      err?.http_code ? `(HTTP ${err.http_code})` : "");
+    if (err?.code === "IMAGE_STORAGE_UNAVAILABLE") {
       return res.status(503).json({ message: "Image storage is not configured" });
+    }
+    if (stage.startsWith("store ")) {
+      return res.status(502).json({ message: "Image storage failed. Please try again or contact support." });
     }
     return res.status(500).json({ message: "Failed to create analysis" });
   } finally {
@@ -103,6 +113,22 @@ export async function getAnalysis(req, res) {
   } catch (err) {
     console.error("get analysis error:", err);
     return res.status(500).json({ message: "Failed to fetch analysis" });
+  }
+}
+
+// Return recent screenings belonging to the signed-in user for mobile history.
+export async function listAnalyses(req, res) {
+  try {
+    const analyses = await analysisModel
+      .find({ userId: req.user._id })
+      .sort({ createdAt: -1, _id: -1 })
+      .limit(50)
+      .select("status createdAt updatedAt inputs.modality modelResults.modelKey modelResults.status modelResults.predictedClass")
+      .lean();
+    return res.json({ analyses });
+  } catch (err) {
+    console.error("list analyses error:", err.message);
+    return res.status(500).json({ message: "Failed to load screening history" });
   }
 }
 

@@ -7,7 +7,7 @@ import '../theme/app_colors.dart';
 import '../widgets/auth_divider.dart';
 import '../widgets/auth_text_field.dart';
 import '../widgets/brand_mark.dart';
-import '../widgets/google_button.dart';
+import '../widgets/google_auth_button.dart';
 import '../widgets/primary_button.dart';
 import 'register_screen.dart';
 
@@ -58,13 +58,17 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  void _googleUnavailable() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Google sign-in is not wired on mobile yet. Use email and password.'),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
+  Future<void> _googleLogin(String credential) async {
+    if (_loading) return;
+    setState(() { _loading = true; _error = null; });
+    try {
+      final session = await AuthService.instance.googleLogin(credential);
+      if (mounted) goToHome(context, userName: session.user.name);
+    } on ApiException catch (error) {
+      if (mounted) setState(() => _error = error.message);
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
   }
 
   @override
@@ -192,9 +196,11 @@ class _LoginScreenState extends State<LoginScreen> {
                             const SizedBox(height: 20),
                             const AuthDivider(),
                             const SizedBox(height: 20),
-                            GoogleButton(
+                            GoogleAuthButton(
                               label: 'Sign in with Google',
-                              onPressed: _loading ? null : _googleUnavailable,
+                              loading: _loading,
+                              onCredential: _googleLogin,
+                              onError: (message) => setState(() => _error = message),
                             ),
                           ],
                         ),
