@@ -15,6 +15,7 @@ services:
   backend:
     build: ./backend
     image: j26-backend:pp1
+    restart: unless-stopped
     env_file:
       - ./backend/.env
     environment:
