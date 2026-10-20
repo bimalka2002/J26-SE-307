@@ -2,9 +2,11 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../services/auth_service.dart';
 import '../theme/app_colors.dart';
 import '../widgets/brand_mark.dart';
 import '../widgets/tooth_scan_animation.dart';
+import 'login_screen.dart';
 import 'main_shell.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -20,8 +22,10 @@ class _SplashScreenState extends State<SplashScreen>
   late final Animation<double> _fade;
   late final Animation<Offset> _slide;
   Timer? _statusTimer;
-  Timer? _navTimer;
+  Timer? _bootTimer;
   bool _navigated = false;
+  bool _sessionReady = false;
+  bool _minTimeReady = false;
 
   static const _statuses = [
     'Initializing scan…',
@@ -55,15 +59,35 @@ class _SplashScreenState extends State<SplashScreen>
       }
       setState(() => _statusIndex += 1);
     });
-    _navTimer = Timer(const Duration(milliseconds: 3200), _goToLogin);
+
+    _bootTimer = Timer(const Duration(milliseconds: 2800), () {
+      _minTimeReady = true;
+      _tryNavigate();
+    });
+    _restoreSession();
   }
 
-  void _goToLogin() {
-    if (!mounted || _navigated) return;
+  Future<void> _restoreSession() async {
+    await AuthService.instance.restoreSession();
+    if (!mounted) return;
+    _sessionReady = true;
+    _tryNavigate();
+  }
+
+  void _tryNavigate() {
+    if (!mounted || _navigated || !_sessionReady || !_minTimeReady) return;
     _navigated = true;
+    _statusTimer?.cancel();
+    _bootTimer?.cancel();
+
+    final signedIn = AuthService.instance.isSignedIn;
+    final userName = AuthService.instance.currentUser?.name;
+
     Navigator.of(context).pushReplacement(
       PageRouteBuilder<void>(
-        pageBuilder: (_, animation, __) => const MainShell(),
+        pageBuilder: (_, animation, __) => signedIn
+            ? MainShell(userName: userName)
+            : const LoginScreen(),
         transitionsBuilder: (_, animation, __, child) {
           return FadeTransition(
             opacity: CurvedAnimation(parent: animation, curve: Curves.easeOut),
@@ -78,7 +102,7 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   void dispose() {
     _statusTimer?.cancel();
-    _navTimer?.cancel();
+    _bootTimer?.cancel();
     _intro.dispose();
     super.dispose();
   }

@@ -1,6 +1,10 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 
 import '../navigation/app_routes.dart';
+import '../services/api_client.dart';
+import '../services/auth_service.dart';
 import '../theme/app_colors.dart';
 import '../widgets/auth_divider.dart';
 import '../widgets/auth_text_field.dart';
@@ -24,7 +28,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool _obscurePassword = true;
   bool _obscureConfirm = true;
   bool _loading = false;
-  bool _googleLoading = false;
+  String? _error;
 
   @override
   void dispose() {
@@ -36,18 +40,38 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   Future<void> _submit() async {
-    if (!_formKey.currentState!.validate()) return;
-    setState(() => _loading = true);
-    await Future<void>.delayed(const Duration(milliseconds: 500));
-    if (!mounted) return;
-    goToHome(context, userName: _name.text.trim());
+    if (!_formKey.currentState!.validate() || _loading) return;
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+
+    try {
+      final session = await AuthService.instance.register(
+        name: _name.text,
+        email: _email.text,
+        password: _password.text,
+      );
+      if (!mounted) return;
+      goToHome(context, userName: session.user.name);
+    } on ApiException catch (err) {
+      if (!mounted) return;
+      setState(() => _error = err.message);
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _error = 'Unable to create your account. Please try again.');
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
   }
 
-  Future<void> _submitGoogle() async {
-    setState(() => _googleLoading = true);
-    await Future<void>.delayed(const Duration(milliseconds: 500));
-    if (!mounted) return;
-    goToHome(context);
+  void _googleUnavailable() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Google sign-in is not wired on mobile yet. Use email and password.'),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
   }
 
   @override
@@ -75,7 +99,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     Row(
                       children: [
                         IconButton(
-                          onPressed: () => Navigator.of(context).maybePop(),
+                          onPressed: _loading ? null : () => Navigator.of(context).maybePop(),
                           style: IconButton.styleFrom(
                             backgroundColor: AppColors.surface.withValues(alpha: 0.7),
                           ),
@@ -124,6 +148,29 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         key: _formKey,
                         child: Column(
                           children: [
+                            if (_error != null) ...[
+                              Container(
+                                width: double.infinity,
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: AppColors.errorSoft,
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: AppColors.error.withValues(alpha: 0.25),
+                                  ),
+                                ),
+                                child: Text(
+                                  _error!,
+                                  style: const TextStyle(
+                                    color: AppColors.error,
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                    height: 1.35,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                            ],
                             AuthTextField(
                               label: 'Full name',
                               controller: _name,
@@ -131,8 +178,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               textInputAction: TextInputAction.next,
                               autofillHints: const [AutofillHints.name],
                               validator: (value) {
-                                if ((value ?? '').trim().isEmpty) {
-                                  return 'Please enter your name';
+                                final name = (value ?? '').trim();
+                                if (name.isEmpty) return 'Please enter your name';
+                                if (name.length > 100) {
+                                  return 'Name must be 100 characters or fewer';
                                 }
                                 return null;
                               },
@@ -165,8 +214,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 () => _obscurePassword = !_obscurePassword,
                               ),
                               validator: (value) {
-                                if ((value ?? '').length < 8) {
+                                final password = value ?? '';
+                                if (password.length < 8) {
                                   return 'Use at least 8 characters';
+                                }
+                                if (utf8.encode(password).length > 72) {
+                                  return 'Password is too long (max 72 UTF-8 bytes)';
                                 }
                                 return null;
                               },
@@ -192,15 +245,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             PrimaryButton(
                               label: _loading ? 'Please wait…' : 'Create account',
                               loading: _loading,
-                              onPressed: _googleLoading ? null : _submit,
+                              onPressed: _loading ? null : _submit,
                             ),
                             const SizedBox(height: 20),
                             const AuthDivider(),
                             const SizedBox(height: 20),
                             GoogleButton(
                               label: 'Sign up with Google',
-                              loading: _googleLoading,
-                              onPressed: _loading ? null : _submitGoogle,
+                              onPressed: _loading ? null : _googleUnavailable,
                             ),
                           ],
                         ),
@@ -216,7 +268,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             style: Theme.of(context).textTheme.bodyMedium,
                           ),
                           GestureDetector(
-                            onTap: () => Navigator.of(context).maybePop(),
+                            onTap: _loading ? null : () => Navigator.of(context).maybePop(),
                             child: const Text(
                               'Sign in',
                               style: TextStyle(
