@@ -45,49 +45,45 @@ curl -fsS -X POST http://127.0.0.1:8000/predict/caries_intraoral -F 'image=@samp
 
 Put an actual oral image named `sample.jpg` in the repository root first. The response contains `modelKey`, `modelVersion`, `status`, `inputModality`, `predictedClass`, and `classScores`. Use `/predict/caries_xray` with a dental X-ray image. These endpoints are for integration checks; the current metadata marks held-out clinical validation as pending.
 
-## Run both services locally with Compose
+## Run the ML container with the Node backend locally
 
-The root `compose.yaml` builds separate Node and ML images. Compose sets `ML_SERVICE_URL=http://ml-service:8000` inside the backend container. The name `ml-service` works there because both containers share the Compose network; it does not resolve from your host or from Render.
+The root `compose.yaml` builds and runs only the ML service. The backend runs directly with Node, so it reaches the published ML port at `http://localhost:8000`. On this Linux setup, use the installed `docker-compose` command; installations with the Compose plugin can use `docker compose` instead.
 
-On this Linux setup, use the installed standalone `docker-compose` command. Other installations may provide the equivalent `docker compose` command. Docker Engine and its command-line tool are enough to run and inspect containers. Docker Desktop offers a graphical view, but Docker Desktop for Linux uses a separate Docker context, so images built in the current Engine may not appear in its window until you switch contexts or rebuild them there.
+From the repository root, start the ML service:
 
 ```bash
-test -f backend/.env || cp backend/.env.example backend/.env
-# Edit backend/.env: provide MongoDB, JWT, Cloudinary, and frontend values.
-docker-compose -f compose.yaml up -d --build
-docker-compose -f compose.yaml ps
+docker-compose up -d --build --remove-orphans ml-service
+docker-compose ps
 curl --retry 30 --retry-delay 2 --retry-connrefused -fsS http://127.0.0.1:8000/ready
-curl -L -sS -o /dev/null -w '%{http_code}\n' http://127.0.0.1:5000/api-docs
-docker-compose -f compose.yaml logs --tail=30 backend
-docker-compose -f compose.yaml exec -T backend node -e 'fetch(process.env.ML_SERVICE_URL + "/ready").then(r => r.json()).then(x => console.log(x.ok, Object.keys(x.models).length))'
-docker-compose -f compose.yaml down
 ```
 
-`-f compose.yaml` selects this project's recipe; `up -d --build` builds both images and starts the containers in the background. `ps` shows the two running containers and their port mappings. The ML readiness request should return `"ok":true` with five loaded models. The API docs request follows the backend's redirect and should print `200` once MongoDB has connected; it may take a minute on first startup. `logs --tail=30 backend` shows recent backend startup messages. The `exec -T backend node -e ...` check should print `true 5`, proving the backend can reach the ML container by service name. `down` stops and removes the Compose containers and network. Host port 5000 serves the Node API; host port 8000 serves the ML API for local checks. Both host ports bind to `127.0.0.1` only.
+`up -d --build ml-service` builds the one ML image and starts its container in the background. The readiness request should return `"ok":true` with five loaded models. In a second terminal, start the backend:
 
-To inspect the containers at any time, use `docker ps`, `docker image ls`, `docker-compose -f compose.yaml logs -f ml-service`, or `docker stats --no-stream`. `docker ps` lists running containers, `docker image ls` lists built images, `logs -f` follows live logs, and `stats` reports resource use. Press Ctrl+C to leave the live log view without stopping a container.
+```bash
+cd backend
+npm install
+npm run dev
+```
 
-The backend still needs MongoDB and Cloudinary. If MongoDB runs on your host, set `MONGODB_URI=mongodb://host.docker.internal:27017/j26-se-307` in `backend/.env` for Compose; if you use Atlas, keep its connection string. `host.docker.internal` is mapped to the Docker host in `compose.yaml`. A container's own `localhost` never means another container or the host.
+The `--remove-orphans` option removes a backend container left by the old Compose setup, freeing port 5000 for Node. Keep `ML_SERVICE_URL=http://localhost:8000` in `backend/.env`, along with its MongoDB, JWT, Cloudinary, and Google settings. The backend listens on `http://localhost:5000`. Check it from another terminal with `curl -L -sS -o /dev/null -w '%{http_code}\n' http://localhost:5000/api-docs`; a running backend should return `200`. The `ml-service` hostname is for containers on the Compose network and does not resolve from Node running on your computer.
 
-For a backend process started directly on your laptop, `ML_SERVICE_URL=http://127.0.0.1:8000` in `backend/.env` is correct. In Compose, `compose.yaml` overrides that value inside the backend container with `http://ml-service:8000`; you do not need to rewrite the local `.env` for that case. On Render, set `ML_SERVICE_URL` in the backend service's Render Environment page to the ML private service's internal address. Keep the remaining backend secrets in `.env` locally and in Render environment settings for deployment.
-
-The backend has its own `Dockerfile` because Compose runs it as a separate Node container, with Node dependencies and port 5000. Its `.dockerignore` keeps local `.env` secrets, `node_modules`, tests, logs, and uploads out of the build context and image. The ML image does not contain the backend; each service can be rebuilt or deployed independently.
+Use `docker-compose logs -f ml-service` to follow the ML logs, `docker stats --no-stream` to check memory, and `docker-compose down` to stop the ML container. Press Ctrl+C to stop `npm run dev` separately. Docker Desktop is optional for viewing containers; Docker Engine and the command line are enough.
 
 ## Ports, settings, and memory
 
 | Setting | Local value | Purpose |
 | --- | --- | --- |
 | ML `PORT` | `8000` | Port Uvicorn listens on inside the container; it binds `0.0.0.0`. |
-| Backend `PORT` | `5000` | Port Express listens on inside the backend container. |
-| Backend `ML_SERVICE_URL` | `http://ml-service:8000` in Compose | Internal base URL used by the Node pipeline; no trailing `/predict`. For a non-container local backend, use `http://127.0.0.1:8000`. |
+| Backend `PORT` | `5000` | Port Express listens on when run with Node. |
+| Backend `ML_SERVICE_URL` | `http://localhost:8000` locally | Base URL used by the Node pipeline; no trailing `/predict`. On Render, use the deployed ML service's reachable URL. |
 | Backend `MONGODB_URI`, `JWT_SECRET` | From `backend/.env` | Required for the backend to start. |
 | Backend `CLOUDINARY_*`, `FRONTEND_ORIGIN`, `GOOGLE_CLIENT_ID` | From `backend/.env` | Image storage, browser access, and optional Google sign-in. |
 
 No model-path environment variable is needed: the verified files live at `/app/saved_models`. The local container used about **598 MiB** after five sequential synthetic predictions. Plan for at least **2 GiB of RAM** and test a **4 GiB instance** first if the service will receive simultaneous requests. Real request concurrency can raise peak memory; use `docker stats` or Render metrics to choose the final instance size. The backend stores results and calls the same five routes as before.
 
-## Share and deploy to Render
+## Share and deploy the ML image
 
-The current backend is already on Render. Keep it as a separate web service. Deploy the ML image as a **private service** in the **same Render workspace and region** as the backend, then point the backend to the ML service's internal address. A Render private service needs a paid compute instance; an existing free web service can still send requests to it. Compose is for local development; Render does not run this Compose network for the existing backend.
+The backend runs as a Node web service on Render, so it does not need a backend Docker image. Deploy the ML image separately, then set `ML_SERVICE_URL` in Render's backend environment to the ML service URL. The Compose hostname `ml-service` is only for containers on the local Compose network.
 
 1. Build and test the ML image locally, then tag it with a version that you will keep. For a Docker Hub repository, replace `yourdockerhubuser` with your account name:
 
@@ -100,15 +96,15 @@ The current backend is already on Render. Keep it as a separate web service. Dep
    docker push yourdockerhubuser/j26-ml-service:pp1-20261020
    ```
 
-   `--platform linux/amd64` targets Render's required architecture; `tag` gives the same image a registry name; `login` authenticates; `push` uploads it. A successful push ends with a digest such as `sha256:...`. Keep the repository private if your checkpoint sharing terms require it. These push commands are instructions only; no image is published by this project setup.
+   `--platform linux/amd64` builds an x86-64 image; `tag` gives the same image a registry name; `login` authenticates; `push` uploads it. A successful push ends with a digest such as `sha256:...`. Keep the repository private if your checkpoint sharing terms require it. These push commands are instructions only; no image is published by this project setup.
 
-2. In Render, choose **New > Private Service > Existing Image** and enter the full image name. If private, add a registry credential with pull access. Set `PORT=8000` and choose an instance with enough memory. Render private services use a TCP health check; this server does not open its port until all five models load, and startup fails if any checkpoint is unavailable. The `/ready` endpoint provides details from inside the Render network.
-3. In that ML service's **Connect > Internal** view, copy its internal hostname and port. Set `ML_SERVICE_URL=http://<internal-hostname>:8000` in the existing Render backend web service's environment. Use the exact address Render shows, including its actual port. Commit and push the updated backend code to the branch Render deploys, then redeploy the backend with the new environment value. Git-backed services with auto-deploy enabled redeploy after a push.
+2. Deploy that ML image to your container host, such as the Cloud Run service already used by this project. Configure its container port as `8000` and give it enough memory for the five loaded models. If the registry repository is private, the host needs credentials to pull the image. Check `/ready` after deployment.
+3. Set `ML_SERVICE_URL` in the Render **Node backend** service's environment to the deployed ML service URL. Use the exact HTTPS URL if the ML service is on Cloud Run. Keep MongoDB, JWT, Google, and Cloudinary values in Render's environment settings. Restart or redeploy the backend after changing its environment.
 4. Submit a screening through the existing frontend. The backend still returns the same analysis response shape. Check the stored model results for `caries_intraoral` and `caries_xray` when both image types are uploaded.
 
-You **do not specifically need Docker Hub**. Render can pull prebuilt images from Docker Hub, GitHub Container Registry, and other supported registries. This project uses a registry because its `.keras` files are ignored by Git: a Render build from the repository would not receive the weights. Render can instead build from a Git Dockerfile if you later adopt a controlled way to include or download all five weights during its build. Do not put `backend/.env` or registry tokens in an image or Git.
+You **do not specifically need Docker Hub**. Any registry supported by the ML container host can hold this image. The `.keras` files are ignored by Git, so a remote build from a fresh checkout would need a separate way to receive all five checkpoints. Do not put `backend/.env` or registry tokens in an image or Git.
 
-When models or code change, rebuild and push a **new version tag**, update the Render ML service to that tag, verify `/ready`, and then keep the backend's internal URL. Image-backed Render services do not auto-deploy when you push a new image tag.
+When models or code change, rebuild and push a **new version tag**, update the deployed ML service to that tag, and verify `/ready`. The Render backend can keep its `ML_SERVICE_URL` if the deployed ML service URL stays the same.
 
 For teammates who only need local use, share repository access plus the five checkpoint files, or give them pull access to the private image. They can then run `docker pull yourdockerhubuser/j26-ml-service:pp1-20261020` followed by `docker run ...`.
 
