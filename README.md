@@ -9,7 +9,7 @@ J26-SE-307/
 ├── frontend/     # Next.js web app
 ├── backend/      # Express API + MongoDB
 ├── ml-service/   # FastAPI + five Keras checkpoints
-├── compose.yaml   # Local backend + ML containers
+├── compose.yaml   # Local ML container
 └── notebooks/    # Model training (Colab)
     ├── OLP.ipynb      # Oral Lichen Planus training
     └── Caries.ipynb   # Dental caries (AlphaDent / DENTEX)
@@ -78,7 +78,7 @@ The ML worker retrieves images using five-minute signed download URLs and forwar
 
 ## ML service and Docker
 
-The [ML service Docker guide](ml-service/README.md) covers the five packaged checkpoints, local Docker and Compose commands, the `ML_SERVICE_URL` backend connection, memory checks, and Render deployment. The two caries checkpoints run separately for intraoral photos and dental X-rays.
+The [ML service Docker guide](ml-service/README.md) covers the five packaged checkpoints, running the ML container locally, the `ML_SERVICE_URL` backend connection, memory checks, and deploying the ML image. The backend runs with Node locally and as a Node service on Render; the two caries checkpoints run separately for intraoral photos and dental X-rays.
 
 Run `npm test` in `backend` for the API, pipeline, and image-storage tests. Tests mock Cloudinary and the ML service, and use a disposable MongoDB instance; no real Cloudinary credentials are required.
 
