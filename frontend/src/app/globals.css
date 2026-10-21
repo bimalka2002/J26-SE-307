@@ -615,29 +615,12 @@ body {
   color: #1d4ed8;
 }
 
-/* Hero scanner visual */
+/* Hero scanner visual: just the scan, floating over the hero background */
 .dv-scanner {
   position: relative;
   z-index: 2;
-  display: grid;
-  justify-items: center;
-  gap: 16px;
-  width: min(360px, 100%);
-  padding: 20px;
-  border-radius: 26px;
-  background: rgba(255, 255, 255, 0.78);
-  border: 1px solid rgba(255, 255, 255, 0.95);
-  box-shadow: 0 24px 60px rgba(40, 60, 90, 0.18);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-}
-
-.dv-scanner-frame {
-  position: relative;
-  width: 100%;
-  aspect-ratio: 1 / 0.92;
-  border-radius: 18px;
-  background: linear-gradient(160deg, #eef4fb, #d3e2f4);
+  width: min(380px, 100%);
+  aspect-ratio: 1 / 0.95;
   overflow: hidden;
 }
 
@@ -645,9 +628,11 @@ body {
   position: absolute;
   inset: 0;
   background-image:
-    linear-gradient(rgba(59, 130, 246, 0.15) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(59, 130, 246, 0.15) 1px, transparent 1px);
-  background-size: 22px 22px;
+    linear-gradient(rgba(37, 99, 235, 0.22) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(37, 99, 235, 0.22) 1px, transparent 1px);
+  background-size: 24px 24px;
+  -webkit-mask-image: radial-gradient(circle at center, #000 35%, transparent 75%);
+  mask-image: radial-gradient(circle at center, #000 35%, transparent 75%);
 }
 
 .dv-scanner-tooth {
@@ -656,133 +641,53 @@ body {
   width: 56%;
   height: 68%;
   color: #2563eb;
-  transition: filter 400ms ease;
-}
-
-.dv-scanner-tooth.is-ready {
-  filter: drop-shadow(0 0 8px rgba(37, 99, 235, 0.5));
+  filter: drop-shadow(0 0 10px rgba(37, 99, 235, 0.55));
 }
 
 .dv-scanner-corner {
   position: absolute;
   z-index: 2;
-  width: 22px;
-  height: 22px;
+  width: 26px;
+  height: 26px;
   border: 0 solid #2563eb;
 }
 
 .dv-scanner-corner.is-tl {
-  top: 12px;
-  left: 12px;
+  top: 6px;
+  left: 6px;
   border-top-width: 3px;
   border-left-width: 3px;
 }
 
 .dv-scanner-corner.is-tr {
-  top: 12px;
-  right: 12px;
+  top: 6px;
+  right: 6px;
   border-top-width: 3px;
   border-right-width: 3px;
 }
 
 .dv-scanner-corner.is-bl {
-  bottom: 12px;
-  left: 12px;
+  bottom: 6px;
+  left: 6px;
   border-bottom-width: 3px;
   border-left-width: 3px;
 }
 
 .dv-scanner-corner.is-br {
-  right: 12px;
-  bottom: 12px;
+  right: 6px;
+  bottom: 6px;
   border-right-width: 3px;
   border-bottom-width: 3px;
 }
 
 .dv-scanner-beam {
   position: absolute;
-  left: 0;
-  right: 0;
+  left: 4%;
+  right: 4%;
   z-index: 1;
   height: 3px;
   background: linear-gradient(90deg, transparent, #2563eb, transparent);
-  box-shadow: 0 0 18px 4px rgba(59, 130, 246, 0.45);
-}
-
-.dv-scanner-status {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  margin: 0;
-  font-size: 14px;
-  font-weight: 700;
-  color: #1e3a8a;
-}
-
-.dv-scanner-dot {
-  width: 9px;
-  height: 9px;
-  border-radius: 50%;
-  background: #3b82f6;
-  animation: dv-scan-pulse 1.4s ease-out infinite;
-}
-
-.dv-scanner-dot.is-ready {
-  background: #16a34a;
-  animation: none;
-}
-
-.dv-scanner-chips {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 8px;
-}
-
-.dv-scanner-chips li {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  min-height: 30px;
-  padding: 0 12px;
-  border-radius: 999px;
-  background: #e8edf2;
-  border: 1px solid transparent;
-  font-size: 12.5px;
-  font-weight: 700;
-  color: #475569;
-  transition: background 250ms ease, color 250ms ease, border-color 250ms ease;
-}
-
-.dv-scanner-chip-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: #94a3b8;
-}
-
-.dv-scanner-chips li.is-active {
-  background: #dbeafe;
-  border-color: #93c5fd;
-  color: #1e40af;
-}
-
-.dv-scanner-chips li.is-active .dv-scanner-chip-dot {
-  background: #2563eb;
-}
-
-.dv-scanner-chips li.is-done {
-  background: #d9f2e0;
-  color: #166534;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .dv-scanner-dot {
-    animation: none;
-  }
+  box-shadow: 0 0 20px 5px rgba(59, 130, 246, 0.5);
 }
 
 .dv-hero-benefits {
