@@ -906,15 +906,20 @@ body {
   border: 1px solid rgba(17, 17, 17, 0.06);
 }
 
+.dv-how-connector {
+  display: none;
+}
+
 @media (min-width: 981px) {
-  .dv-how-step:not(:last-child)::after {
-    content: "";
+  .dv-how-connector {
+    display: block;
     position: absolute;
     top: 50px;
     right: -18px;
     width: 18px;
     height: 2px;
-    background: #bfdbfe;
+    background: #2563eb;
+    transform-origin: left center;
   }
 }
 
