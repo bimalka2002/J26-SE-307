@@ -37,6 +37,45 @@ const fadeUp: Variants = {
   },
 };
 
+// Steps reveal one after another: card, then its number, then the line to the next step.
+const STEP_GAP = 0.55;
+
+const stepVariants: Variants = {
+  hidden: { opacity: 0, y: 24 },
+  show: (index: number) => ({
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.45, delay: index * STEP_GAP, ease: easeOut },
+  }),
+};
+
+const numVariants: Variants = {
+  hidden: { scale: 0.6, backgroundColor: "#dbeafe", color: "#2563eb" },
+  show: (index: number) => ({
+    scale: 1,
+    backgroundColor: "#2563eb",
+    color: "#ffffff",
+    transition: { type: "spring", stiffness: 320, damping: 18, delay: index * STEP_GAP + 0.2 },
+  }),
+};
+
+const lineVariants: Variants = {
+  hidden: { scaleX: 0 },
+  show: (index: number) => ({
+    scaleX: 1,
+    transition: { duration: 0.3, delay: index * STEP_GAP + 0.4, ease: "easeOut" },
+  }),
+};
+
+const noteVariants: Variants = {
+  hidden: { opacity: 0, y: 28 },
+  show: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.45, delay: steps.length * STEP_GAP, ease: easeOut },
+  },
+};
+
 const stagger: Variants = {
   hidden: {},
   show: {
@@ -65,22 +104,25 @@ export function HowItWorks() {
           </p>
         </motion.div>
 
-        <motion.ol className="dv-how-steps" variants={stagger}>
-          {steps.map((step) => (
-            <motion.li key={step.value} className="dv-how-step" variants={fadeUp}>
-              <div className="dv-how-step-num" aria-hidden>
+        <motion.ol className="dv-how-steps" variants={{ hidden: {}, show: {} }}>
+          {steps.map((step, index) => (
+            <motion.li key={step.value} className="dv-how-step" variants={stepVariants} custom={index}>
+              <motion.div className="dv-how-step-num" variants={numVariants} custom={index} aria-hidden>
                 {step.value}
-              </div>
+              </motion.div>
               <h3>
                 <span className="sr-only">Step {Number(step.value)}: </span>
                 {step.title}
               </h3>
               <p>{step.text}</p>
+              {index < steps.length - 1 ? (
+                <motion.span className="dv-how-connector" variants={lineVariants} custom={index} aria-hidden />
+              ) : null}
             </motion.li>
           ))}
         </motion.ol>
 
-        <motion.div className="dv-how-note" variants={fadeUp}>
+        <motion.div className="dv-how-note" variants={noteVariants}>
           <p>
             Screening support only. OralScan does not replace clinical diagnosis. Discuss results
             with a qualified clinician.

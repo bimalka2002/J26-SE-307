@@ -3,7 +3,7 @@
 import { motion, useReducedMotion, useScroll, useTransform, type Variants } from "motion/react";
 import { useRef } from "react";
 import { AnimatedButton } from "@/components/ui/AnimatedButton";
-import { SampleResultCard } from "@/components/home/SampleResultCard";
+import { HeroScanner } from "@/components/home/HeroScanner";
 
 const benefits = [
   "Upload a photo, an X-ray, or both",
@@ -56,17 +56,36 @@ export function Hero() {
           <motion.h1 className="dv-hero-title" variants={fadeUp}>
             <span className="dv-title-solid">Detect</span>
             <span className="dv-title-outline">Oral Disease</span>
-            <span className="dv-title-solid dv-title-extra">&amp; Act Earlier</span>
+            <span className="dv-title-solid">&amp; Act Earlier</span>
           </motion.h1>
           <motion.p className="dv-hero-copy" variants={fadeUp}>
-            OralScan uses specialist AI models to screen oral photos and dental X-rays for signs of
-            conditions such as OLP, OSMF, leukoplakia/erythroplakia, and caries.
+            Upload a photo of your mouth or a dental X&#8209;ray. OralScan&apos;s AI models check it for early
+            signs of four conditions: OLP, OSMF, leukoplakia/erythroplakia and caries.
           </motion.p>
-          <motion.div variants={fadeUp} className="dv-hero-cta-motion">
+          <motion.div variants={fadeUp} className="dv-hero-actions">
             <AnimatedButton href="/register" arrow className="dv-hero-cta">
               Get Started
             </AnimatedButton>
+            <a href="#how-it-works" className="dv-hero-link">
+              See how it works
+            </a>
           </motion.div>
+          <motion.ul className="dv-hero-benefits" variants={fadeUp}>
+            {benefits.map((benefit) => (
+              <li key={benefit}>
+                <svg viewBox="0 0 16 16" width="16" height="16" fill="none" aria-hidden>
+                  <path
+                    d="M3.5 8.2 6.4 11l6.1-6.4"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+                {benefit}
+              </li>
+            ))}
+          </motion.ul>
           <motion.p className="dv-hero-note" variants={fadeUp}>
             <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden>
               <circle cx="12" cy="12" r="9" />
@@ -85,36 +104,9 @@ export function Hero() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.2, ease: easeOut }}
         >
-          <SampleResultCard />
+          <HeroScanner />
         </motion.div>
 
-        <motion.div
-          className="dv-hero-right"
-          variants={stagger}
-          initial={reduceMotion ? "show" : "hidden"}
-          animate="show"
-        >
-          <motion.p className="dv-hero-title dv-hero-title-right" variants={fadeUp} aria-hidden>
-            <span className="dv-title-solid">&amp; Act</span>
-            <span className="dv-title-outline">Earlier</span>
-          </motion.p>
-          <motion.ul className="dv-hero-benefits" variants={fadeUp}>
-            {benefits.map((benefit) => (
-              <li key={benefit}>
-                <svg viewBox="0 0 16 16" width="16" height="16" fill="none" aria-hidden>
-                  <path
-                    d="M3.5 8.2 6.4 11l6.1-6.4"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-                {benefit}
-              </li>
-            ))}
-          </motion.ul>
-        </motion.div>
       </div>
     </section>
   );
