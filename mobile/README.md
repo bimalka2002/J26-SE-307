@@ -13,7 +13,7 @@ The mobile app uses the backend for sign-in, scan submission, results, and histo
 
 ## Run in Chrome on Linux
 
-1. Start the backend (and the ML service if you want completed model results). From the repository root, `docker compose up -d` starts both services. Check that the API responds at `http://localhost:5000/auth/me` (a `401` response means it is running and requires sign-in).
+1. From the repository root, start only the ML container with `docker-compose up -d --build --remove-orphans ml-service` (or `docker compose up -d --build --remove-orphans ml-service` if the Compose plugin is installed). The `--remove-orphans` option removes any backend container from the old Compose setup. In a second terminal, start the Node backend with `cd backend && npm run dev`. Keep `ML_SERVICE_URL=http://localhost:8000` in `backend/.env`. Check that the API responds at `http://localhost:5000/auth/me` (a `401` response means it is running and requires sign-in).
 2. In Google Cloud Console, add `http://localhost:7357` to **Authorized JavaScript origins** for the same **Web application client ID** used by `backend/.env` as `GOOGLE_CLIENT_ID`.
 3. Run Flutter from `mobile/`:
 
