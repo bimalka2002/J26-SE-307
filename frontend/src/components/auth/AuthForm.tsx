@@ -10,17 +10,6 @@ import { GoogleButton } from "./GoogleButton";
 import { SessionStatus } from "./SessionStatus";
 import { returnPath } from "@/lib/auth";
 
-function BrandMark() {
-  return (
-    <span className="brand-symbol" aria-hidden="true">
-      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.2">
-        <circle cx="9" cy="12" r="4" />
-        <circle cx="15" cy="12" r="4" />
-      </svg>
-    </span>
-  );
-}
-
 type FieldName = "name" | "email" | "password" | "confirmPassword";
 type Values = Record<FieldName, string>;
 
@@ -133,7 +122,6 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
     <main className="auth-shell">
       <section className="auth-intro" aria-label="OralScan">
         <Link href="/" className="brand">
-          <BrandMark />
           OralScan
         </Link>
         <div className="intro-copy">

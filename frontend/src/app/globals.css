@@ -246,20 +246,9 @@ body {
 .dv-logo {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
   font-size: 20px;
   font-weight: 700;
   letter-spacing: -0.04em;
-}
-
-.dv-logo-mark {
-  display: grid;
-  place-items: center;
-  width: 34px;
-  height: 34px;
-  border-radius: 8px;
-  background: #111;
-  color: #fff;
 }
 
 /* Nav */
@@ -305,25 +294,7 @@ body {
 }
 
 .dv-nav.is-scrolled .dv-logo {
-  gap: 8px;
   font-size: 18px;
-}
-
-.dv-nav.is-scrolled .dv-logo-mark {
-  display: none;
-}
-
-.dv-logo-accent {
-  display: none;
-  width: 8px;
-  height: 8px;
-  border-radius: 2px;
-  background: #3b82f6;
-  flex-shrink: 0;
-}
-
-.dv-nav.is-scrolled .dv-logo-accent {
-  display: inline-block;
 }
 
 .dv-nav.is-scrolled .dv-animated-btn-wrap {
@@ -1456,22 +1427,11 @@ body {
 .brand {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
   font-size: 22px;
   font-weight: 700;
   letter-spacing: -0.04em;
   text-decoration: none;
   color: var(--auth-ink);
-}
-
-.brand-symbol {
-  display: grid;
-  place-items: center;
-  width: 34px;
-  height: 34px;
-  background: #111;
-  color: white;
-  border-radius: 8px;
 }
 
 .intro-copy {

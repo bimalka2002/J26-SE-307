@@ -27,12 +27,6 @@ export function AppNavbar({ user }: { user: User }) {
     <header className="app-nav">
       <div className="app-nav-inner">
         <Link href="/app" className="dv-logo">
-          <span className="dv-logo-mark" aria-hidden>
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.2">
-              <circle cx="9" cy="12" r="4" />
-              <circle cx="15" cy="12" r="4" />
-            </svg>
-          </span>
           OralScan
         </Link>
 

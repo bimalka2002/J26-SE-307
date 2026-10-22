@@ -68,12 +68,6 @@ export function Navbar() {
     >
       <div className="dv-nav-inner">
         <Link href="#home" className="dv-logo" onClick={() => setOpen(false)}>
-          <span className="dv-logo-mark" aria-hidden>
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.2">
-              <circle cx="9" cy="12" r="4" />
-              <circle cx="15" cy="12" r="4" />
-            </svg>
-          </span>
           OralScan
         </Link>
 
